@@ -28,8 +28,10 @@ export function validateOrigin(
     return true;
   }
 
-  // 2. No Origin header — same-origin navigational request (allow)
+  // 2. No Origin header — same-origin navigational request (allow, but emit audit warning)
+  // @para-doc [#csa-sec-csrf-origin-log]
   if (!origin) {
+    console.warn('[CSRF Audit Warning] Empty origin header on mutation route', { pathname, host });
     return true;
   }
 

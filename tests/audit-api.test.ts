@@ -421,5 +421,32 @@ describe('Database Reconciliation (Audit) APIs Integration Tests', () => {
       expect(audits[0].target).toContain(orderId1);
       expect(audits[0].target).toContain(orderId2);
     });
+
+    it('should suppress internal error details in 500 response when DEV is false', async () => {
+      const mockRequest = new Request('http://localhost/api/crm/audit/action', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'invalid_action', targetId: '123' }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const mockContext: any = {
+        request: mockRequest,
+        url: new URL(mockRequest.url),
+        cookies: { get: () => ({ value: adminToken }) },
+        locals: { runtime: { env: { SESSION_SECRET } } }
+      };
+
+      const originalDev = import.meta.env.DEV;
+      try {
+        (import.meta.env as any).DEV = false;
+        const response = await runActionHandler(mockContext);
+        expect(response.status).toBe(500);
+        const data = await response.json();
+        expect(data.error).toBe('Internal Server Error');
+        expect(data.details).toBeUndefined();
+      } finally {
+        (import.meta.env as any).DEV = originalDev;
+      }
+    });
   });
 });

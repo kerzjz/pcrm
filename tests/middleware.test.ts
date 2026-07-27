@@ -353,5 +353,26 @@ describe('Astro Middleware - Authentication & RBAC', () => {
       expect(response.status).toBe(200);
       expect(nextCalled).toHaveBeenCalled();
     });
+
+    it('should inject per-request nonce into locals and CSP script-src header', async () => {
+      const mockContext: any = {
+        url: new URL('http://localhost/login'),
+        request: new Request('http://localhost/login'),
+        cookies: { get: () => null },
+        locals: { runtime: { env: { SESSION_SECRET } } }
+      };
+
+      const nextResponse = new Response('ok');
+      const nextCalled = vi.fn().mockResolvedValue(nextResponse);
+      const response = await onRequest(mockContext, nextCalled);
+
+      expect(mockContext.locals.nonce).toBeDefined();
+      expect(typeof mockContext.locals.nonce).toBe('string');
+      expect(mockContext.locals.nonce.length).toBeGreaterThan(10);
+
+      const csp = response.headers.get('Content-Security-Policy');
+      expect(csp).toBeDefined();
+      expect(csp).toContain(`'nonce-${mockContext.locals.nonce}'`);
+    });
   });
 });

@@ -25,7 +25,13 @@ import { GET as getSyncLogsHandler } from '../src/pages/api/settings/sync-logs';
 const SESSION_SECRET = 'fallback-secret-key-must-be-at-least-32-chars-long';
 process.env.SESSION_SECRET = SESSION_SECRET;
 
-function createMockContext(method: string, body?: any, sessionCookie?: string, params?: any) {
+class MockKV {
+  store = new Map<string, string>();
+  async get(key: string): Promise<string | null> { return this.store.get(key) || null; }
+  async put(key: string, value: string): Promise<void> { this.store.set(key, value); }
+}
+
+function createMockContext(method: string, body?: any, sessionCookie?: string, params?: any, kv?: any) {
   const request = new Request('http://localhost/api/settings', {
     method,
     body: body ? JSON.stringify(body) : undefined,
@@ -54,7 +60,7 @@ function createMockContext(method: string, body?: any, sessionCookie?: string, p
     params: params || {},
     clientAddress: '127.0.0.1',
     locals: {
-      runtime: { env: { SESSION_SECRET } },
+      runtime: { env: { SESSION_SECRET, SESSION: kv || new MockKV() } },
       user: sessionCookie ? { id: 'usr-admin', username: 'admin1', role: 'admin' } : undefined
     },
     setCookies
@@ -204,6 +210,32 @@ describe('Settings v2 API Integration Tests (Phase 1 & Phase 2)', () => {
       expect(response.status).toBe(400);
       const data = await response.json();
       expect(data.error).toBe('Invalid current password');
+    });
+
+    it('should enforce rate limiting on change password endpoint when KV rate limit is exceeded', async () => {
+      const mockKv: any = {
+        get: async () => JSON.stringify({ count: 10, resetAt: Date.now() + 3600000 }),
+        put: async () => {}
+      };
+
+      const request = new Request('http://localhost/api/settings/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword: 'adminPassword123', newPassword: 'newAdminPassword999' }),
+        headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '192.168.1.100' }
+      });
+
+      const context: any = {
+        request,
+        url: new URL(request.url),
+        cookies: { get: () => ({ value: adminToken }) },
+        clientAddress: '192.168.1.100',
+        locals: { runtime: { env: { SESSION_SECRET, SESSION: mockKv } } }
+      };
+
+      const response = await changePasswordHandler(context);
+      expect(response.status).toBe(429);
+      const data = await response.json();
+      expect(data.error).toBe('Too many password change attempts. Please try again later.');
     });
   });
 

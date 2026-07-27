@@ -105,10 +105,16 @@ describe('CSRF Origin Validation (S1)', () => {
     expect(result).toBe(true);
   });
 
-  it('should accept POST with no origin header (same-origin form submit)', () => {
+  it('should accept POST with no origin header (same-origin form submit) and log audit warning', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     // Browsers omit Origin header for same-origin navigational requests
     const result = validateOrigin(null, 'mycrm.example.com', '/api/crm/customers');
     expect(result).toBe(true);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[CSRF Audit Warning] Empty origin header on mutation route'),
+      expect.anything()
+    );
+    warnSpy.mockRestore();
   });
 
   it('should whitelist webhook endpoints regardless of origin', () => {

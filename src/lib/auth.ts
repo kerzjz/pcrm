@@ -62,7 +62,7 @@ function base64urlEncode(str: string): string {
   return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-// @para-doc [#csa-auth-hash]
+// @para-doc [#csa-sec-pbkdf2-kdf]
 export async function hashPassword(password: string): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const encoder = new TextEncoder();
@@ -80,7 +80,7 @@ export async function hashPassword(password: string): Promise<string> {
     {
       name: 'PBKDF2',
       salt: salt.buffer as ArrayBuffer,
-      iterations: 10000,
+      iterations: 600000,
       hash: 'SHA-256',
     },
     baseKey,
@@ -90,12 +90,12 @@ export async function hashPassword(password: string): Promise<string> {
   const saltHex = toHex(salt);
   const hashHex = toHex(new Uint8Array(derivedBits));
 
-  return `pbkdf2:10000:${saltHex}:${hashHex}`;
+  return `pbkdf2:600000:${saltHex}:${hashHex}`;
 }
 
-// @para-doc [#csa-auth-hash]
+// @para-doc [#csa-sec-pbkdf2-kdf]
 export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
-  if (!storedHash.startsWith('pbkdf2:10000:')) {
+  if (!storedHash.startsWith('pbkdf2:')) {
     return false;
   }
 
@@ -104,7 +104,12 @@ export async function verifyPassword(password: string, storedHash: string): Prom
     return false;
   }
 
-  const [, , saltHex, hashHex] = parts;
+  const [, iterationsStr, saltHex, hashHex] = parts;
+  const iterations = parseInt(iterationsStr, 10);
+  if (isNaN(iterations) || iterations <= 0) {
+    return false;
+  }
+
   const salt = fromHex(saltHex);
   const originalHash = fromHex(hashHex);
 
@@ -123,7 +128,7 @@ export async function verifyPassword(password: string, storedHash: string): Prom
     {
       name: 'PBKDF2',
       salt: salt.buffer as ArrayBuffer,
-      iterations: 10000,
+      iterations: iterations,
       hash: 'SHA-256',
     },
     baseKey,

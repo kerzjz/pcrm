@@ -9,7 +9,7 @@
   <p>Self-hosted financial and invoicing engine tailored for Vietnamese small businesses.</p>
 
   [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-  [![Version](https://img.shields.io/badge/Version-v0.12.1-blue.svg)](CHANGELOG.md)
+  [![Version](https://img.shields.io/badge/Version-v0.13.1-blue.svg)](CHANGELOG.md)
   ![Status](https://img.shields.io/badge/Status-Beta-orange.svg)
   [![Built with Astro](https://img.shields.io/badge/Built%20with-Astro-BC52EE.svg?logo=astro&logoColor=white)](https://astro.build)
 
@@ -43,7 +43,7 @@
 - **Dynamic Database Routing:** Automatically uses an in-memory SQLite database for testing, local SQLite database for development, and Cloudflare D1 for production deployment.
 - **Financial Compliance:** Auto-generates quarterly and monthly tax report spreadsheets complying with standard Vietnamese bookkeeping guidelines (S1a-HKD).
 - **TDD-First Architecture:** Decoupled codebase utilizing Repository patterns, tested locally with Vitest.
-- **Security Hardening (v0.8.0):** Production-grade session auth security, built-in client-side XSS protection, production verbose error masking, and sliding-window rate limiting on login via Cloudflare KV namespace.
+- **Security Hardening (v0.13.1):** Enforced mandatory `INITIAL_ADMIN_PASSWORD` secret configuration (disabling default `'admin123'`), upgraded password hashing to PBKDF2 with 600,000 iterations (OWASP compliant) with transparent legacy re-hash, implemented per-request dynamic CSP script nonces, sanitized production 500 error responses, enforced fail-closed rate limiting on KV failures, enabled strict CSRF origin audit logging, sanitized financial debug logs, and implemented atomic SQL wallet balance updates.
 - **Services & Late Association (v0.9.0):** Integrated product/service catalog management, manual transaction association (Late Association) for unmatched payments, dynamic VietQR prefix generation based on selected services, and customizable automated invoice description templates.
 - **Transaction Safety & Locking Resolution (v0.11.4):** Unified database transaction engine with exponential backoff and jitter retry mechanism to resolve database locking conflict (`SQLITE_BUSY`), complemented by a dynamic fallback to sequential execution in local D1 emulate environments lacking transaction support.
 - **Dynamic Reports Module & Cycle Multipliers (v0.12.0):** Integrated custom month-to-month range filter report panels with merged single Excel sheet export option. Added support for quick draft orders (unpaid) and custom billing cycle months multipliers. Payment descriptions accept period suffixes (e.g. `X{N}` where `{N}` is the cycle count) which are auto-parsed by the webhook reconciliation engine (supporting 1-60 months). Integrated partial wallet deductions and a unified manual reconciliation modal with inline price mismatch alerts.

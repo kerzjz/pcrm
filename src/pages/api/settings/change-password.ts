@@ -5,6 +5,7 @@ import { getDb } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { verifySessionCookie, verifyPassword, hashPassword, getSessionSecret } from '@/lib/auth';
+import { checkRateLimit } from '@/lib/rate-limiter';
 import { logAudit } from '@/lib/audit';
 import { logDebug } from '@/lib/debug-logger';
 
@@ -13,6 +14,26 @@ export const POST: APIRoute = async (context) => {
   let db: any = null;
   let requestBody: any = null;
   try {
+    // Check rate limit first
+    // @para-doc [#csa-sec-changepass-ratelimit]
+    const clientIp = context.request.headers.get('CF-Connecting-IP') || context.clientAddress || '127.0.0.1';
+    const kv = env?.SESSION || (context.locals as any)?.runtime?.env?.SESSION;
+    const rateLimit = await checkRateLimit(kv, clientIp, '/api/settings/change-password', 10, 3600);
+    if (!rateLimit.allowed) {
+      return new Response(
+        JSON.stringify({
+          error: 'Too many password change attempts. Please try again later.',
+          ...(import.meta.env.DEV && { details: `Retry after ${rateLimit.retryAfterSeconds}s` })
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': String(rateLimit.retryAfterSeconds)
+          }
+        }
+      );
+    }
     const sessionCookie = context.cookies.get('session')?.value;
     const sessionSecret = getSessionSecret();
 
