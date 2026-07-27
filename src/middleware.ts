@@ -46,7 +46,7 @@ export const onRequest = async (context: APIContext, next: MiddlewareNext) => {
   const isStatic = pathname.includes('.') && !pathname.startsWith('/api/');
 
   if (isPublic || isStatic) {
-    return addSecurityHeaders(await next(), nonce);
+    return addSecurityHeaders(await next());
   }
 
   // 2. Check Authentication for remaining routes (dashboard, other APIs...)
@@ -86,7 +86,7 @@ export const onRequest = async (context: APIContext, next: MiddlewareNext) => {
         }
       }
 
-      return addSecurityHeaders(await next(), nonce);
+      return addSecurityHeaders(await next());
     }
   }
 
@@ -105,19 +105,15 @@ export const onRequest = async (context: APIContext, next: MiddlewareNext) => {
 // Mutate headers directly to avoid miniflare ReadableStream piping issues
 // (creating new Response(response.body) causes "Promise will never complete" in Workers dev)
 // @para-doc [#csa-sec-csp-nonce]
-function addSecurityHeaders(response: Response, nonce?: string): Response {
+function addSecurityHeaders(response: Response): Response {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
-  const scriptSrc = nonce 
-    ? (import.meta.env.PROD ? `'self' 'nonce-${nonce}'` : `'self' 'nonce-${nonce}' 'unsafe-inline'`)
-    : "'self' 'unsafe-inline'";
-
   response.headers.set(
     'Content-Security-Policy',
-    `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://img.vietqr.io; font-src 'self' https://fonts.gstatic.com`
+    `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://img.vietqr.io; font-src 'self' https://fonts.gstatic.com`
   );
   // HSTS only in production
   if (import.meta.env.PROD) {

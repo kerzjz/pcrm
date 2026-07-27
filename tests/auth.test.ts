@@ -205,7 +205,7 @@ describe('Authentication API Endpoints - Integration Tests', () => {
     expect(decoded?.username).toBe(TEST_USER.username);
   });
 
-  it('should logout and delete session cookie', async () => {
+  it('should logout, delete session cookie, and redirect to /login with 302 status', async () => {
     let deletedCookieName = '';
     
     const mockRequest = new Request('http://localhost/api/auth/logout', {
@@ -218,14 +218,19 @@ describe('Authentication API Endpoints - Integration Tests', () => {
         delete: (name: string) => {
           deletedCookieName = name;
         }
+      },
+      redirect: (url: string, status = 302) => {
+        return new Response(null, {
+          status,
+          headers: { 'Location': url }
+        });
       }
     };
 
     const response = await logoutHandler(mockContext);
-    expect(response.status).toBe(200);
-    
-    const data = await response.json();
-    expect(data.success).toBe(true);
+    expect(response.status).toBe(302);
+    expect(response.headers.get('Location')).toBe('/login');
+    expect(response.headers.get('Cache-Control')).toContain('no-store');
     expect(deletedCookieName).toBe('session');
   });
 

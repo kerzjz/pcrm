@@ -372,7 +372,7 @@ describe('Astro Middleware - Authentication & RBAC', () => {
 
       const csp = response.headers.get('Content-Security-Policy');
       expect(csp).toBeDefined();
-      expect(csp).toContain(`'nonce-${mockContext.locals.nonce}'`);
+      expect(csp).toContain("script-src 'self' 'unsafe-inline'");
     });
   });
 });
