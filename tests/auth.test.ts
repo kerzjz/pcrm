@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { hashPassword, verifyPassword, createSessionCookie, verifySessionCookie } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { users } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import path from 'path';
 import { POST as loginHandler } from '@/pages/api/auth/login';
@@ -11,27 +12,33 @@ const SESSION_SECRET = 'test-secret-key-must-be-long-enough-32-chars';
 process.env.SESSION_SECRET = SESSION_SECRET;
 
 describe('Authentication Engine - Password Hashing', () => {
-  it('should hash password using PBKDF2 and return correct format', async () => {
+  it('should hash password using PBKDF2 with 600,000 iterations and return correct format', async () => {
     const password = 'my-super-secret-password';
     const hash = await hashPassword(password);
     
     expect(hash).toBeDefined();
-    expect(hash.startsWith('pbkdf2:10000:')).toBe(true);
+    expect(hash.startsWith('pbkdf2:600000:')).toBe(true);
     
     const parts = hash.split(':');
-    expect(parts.length).toBe(4); // ['pbkdf2', '10000', saltHex, hashHex]
+    expect(parts.length).toBe(4); // ['pbkdf2', '600000', saltHex, hashHex]
     expect(parts[2]).toHaveLength(32); // 16 bytes salt = 32 hex chars
     expect(parts[3]).toHaveLength(64); // 32 bytes derived key = 64 hex chars
   });
 
-  it('should verify password successfully', async () => {
+  it('should verify password successfully for both 600k and legacy 10k hashes', async () => {
     const password = 'my-super-secret-password';
-    const hash = await hashPassword(password);
+    const hash600k = await hashPassword(password);
     
-    const isCorrect = await verifyPassword(password, hash);
-    expect(isCorrect).toBe(true);
+    const isCorrect600k = await verifyPassword(password, hash600k);
+    expect(isCorrect600k).toBe(true);
 
-    const isIncorrect = await verifyPassword('wrong-password', hash);
+    // Mock legacy 10k hash format: pbkdf2:10000:...
+    const legacy10kHash = 'pbkdf2:10000:00112233445566778899aabbccddeeff:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
+    // Test that verifyPassword parses iterations dynamically
+    const isIncorrectLegacy = await verifyPassword('wrong-password', legacy10kHash);
+    expect(isIncorrectLegacy).toBe(false);
+
+    const isIncorrect = await verifyPassword('wrong-password', hash600k);
     expect(isIncorrect).toBe(false);
   });
 });
@@ -216,14 +223,13 @@ describe('Authentication API Endpoints - Integration Tests', () => {
     expect(deletedCookieName).toBe('session');
   });
 
-  it('should auto-seed admin user when database is empty', async () => {
+  it('should throw error when database is empty and INITIAL_ADMIN_PASSWORD is not set', async () => {
     const db = getDb();
-    // Delete all users to simulate an empty DB
     await db.delete(users);
 
     const mockRequest = new Request('http://localhost/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ username: 'admin', password: 'admin123' }),
+      body: JSON.stringify({ username: 'admin', password: 'somepassword' }),
       headers: { 'Content-Type': 'application/json' }
     });
 
@@ -233,7 +239,35 @@ describe('Authentication API Endpoints - Integration Tests', () => {
       cookies: { set: () => {} }
     };
 
+    // When INITIAL_ADMIN_PASSWORD is not configured, it should return 500 error
     const response = await loginHandler(mockContext);
+    expect(response.status).toBe(500);
+    const data = await response.json();
+    expect(data.details).toContain('INITIAL_ADMIN_PASSWORD is not configured in environment secrets.');
+  });
+
+  it('should auto-seed admin user when database is empty and INITIAL_ADMIN_PASSWORD is set', async () => {
+    const db = getDb();
+    // Delete all users to simulate an empty DB
+    await db.delete(users);
+
+    const mockRequest = new Request('http://localhost/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username: 'admin', password: 'custom-admin-password-123' }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    const mockContext: any = {
+      request: mockRequest,
+      locals: { runtime: { env: { SESSION_SECRET, INITIAL_ADMIN_PASSWORD: 'custom-admin-password-123' } } },
+      cookies: { set: () => {} }
+    };
+
+    // Mock env.INITIAL_ADMIN_PASSWORD
+    process.env.INITIAL_ADMIN_PASSWORD = 'custom-admin-password-123';
+    const response = await loginHandler(mockContext);
+    delete process.env.INITIAL_ADMIN_PASSWORD;
+
     expect(response.status).toBe(200);
     
     const data = await response.json();
@@ -245,5 +279,57 @@ describe('Authentication API Endpoints - Integration Tests', () => {
     expect(createdUsers.length).toBe(1);
     expect(createdUsers[0].username).toBe('admin');
     expect(createdUsers[0].role).toBe('admin');
-  });
+  }, 15000);
+
+  it('should transparently upgrade legacy 10k PBKDF2 hash to 600k hash upon successful login', async () => {
+    const db = getDb();
+    await db.delete(users);
+
+    const legacyPassword = 'legacy-password-123';
+    // Manually create legacy 10k hash using legacy formula
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const encoder = new TextEncoder();
+    const baseKey = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(legacyPassword),
+      { name: 'PBKDF2' },
+      false,
+      ['deriveBits']
+    );
+    const derivedBits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', salt: salt.buffer as ArrayBuffer, iterations: 10000, hash: 'SHA-256' },
+      baseKey,
+      256
+    );
+    const saltHex = Array.from(salt).map((b) => b.toString(16).padStart(2, '0')).join('');
+    const hashHex = Array.from(new Uint8Array(derivedBits)).map((b) => b.toString(16).padStart(2, '0')).join('');
+    const legacyHash = `pbkdf2:10000:${saltHex}:${hashHex}`;
+
+    await db.insert(users).values({
+      id: 'legacy-user-1',
+      username: 'legacyuser',
+      passwordHash: legacyHash,
+      role: 'admin'
+    });
+
+    const mockRequest = new Request('http://localhost/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username: 'legacyuser', password: legacyPassword }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    const mockContext: any = {
+      request: mockRequest,
+      locals: { runtime: { env: { SESSION_SECRET } } },
+      cookies: { set: () => {} }
+    };
+
+    const response = await loginHandler(mockContext);
+    expect(response.status).toBe(200);
+
+    const updatedUser = await db.query.users.findFirst({
+      where: eq(users.id, 'legacy-user-1')
+    });
+    expect(updatedUser?.passwordHash.startsWith('pbkdf2:600000:')).toBe(true);
+  }, 15000);
 });

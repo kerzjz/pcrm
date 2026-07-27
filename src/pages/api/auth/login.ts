@@ -43,10 +43,14 @@ export const POST: APIRoute = async (context) => {
     const db = getDb(env);
 
     // 1.5 Auto-Seed Admin user if DB is empty
+    // @para-doc [#csa-sec-admin-seed]
     const existingUsers = await db.select().from(users).limit(1);
     if (existingUsers.length === 0) {
       const adminUsername = env?.INITIAL_ADMIN_USERNAME || import.meta.env.INITIAL_ADMIN_USERNAME || 'admin';
-      const adminPassword = env?.INITIAL_ADMIN_PASSWORD || import.meta.env.INITIAL_ADMIN_PASSWORD || 'admin123';
+      const adminPassword = env?.INITIAL_ADMIN_PASSWORD || import.meta.env.INITIAL_ADMIN_PASSWORD;
+      if (!adminPassword) {
+        throw new Error('INITIAL_ADMIN_PASSWORD is not configured in environment secrets.');
+      }
       const adminHash = await hashPassword(adminPassword);
       await db.insert(users).values({
         id: crypto.randomUUID(),
@@ -85,6 +89,16 @@ export const POST: APIRoute = async (context) => {
         JSON.stringify({ error: 'Invalid username or password' }),
         { status: 401, headers: { 'Content-Type': 'application/json' } }
       );
+    }
+
+    // 3.5 Transparent re-hash legacy 10k PBKDF2 hash to 600k
+    if (user.passwordHash.startsWith('pbkdf2:10000:')) {
+      try {
+        const updatedHash = await hashPassword(password);
+        await db.update(users).set({ passwordHash: updatedHash }).where(eq(users.id, user.id));
+      } catch (err) {
+        console.warn('[Auth Re-hash Warning] Failed to upgrade legacy password hash:', err);
+      }
     }
 
     // 4. Setup session cookie

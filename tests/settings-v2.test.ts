@@ -205,6 +205,32 @@ describe('Settings v2 API Integration Tests (Phase 1 & Phase 2)', () => {
       const data = await response.json();
       expect(data.error).toBe('Invalid current password');
     });
+
+    it('should enforce rate limiting on change password endpoint when KV rate limit is exceeded', async () => {
+      const mockKv: any = {
+        get: async () => JSON.stringify({ count: 10, resetAt: Date.now() + 3600000 }),
+        put: async () => {}
+      };
+
+      const request = new Request('http://localhost/api/settings/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword: 'adminPassword123', newPassword: 'newAdminPassword999' }),
+        headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '192.168.1.100' }
+      });
+
+      const context: any = {
+        request,
+        url: new URL(request.url),
+        cookies: { get: () => ({ value: adminToken }) },
+        clientAddress: '192.168.1.100',
+        locals: { runtime: { env: { SESSION_SECRET, SESSION: mockKv } } }
+      };
+
+      const response = await changePasswordHandler(context);
+      expect(response.status).toBe(429);
+      const data = await response.json();
+      expect(data.error).toBe('Too many password change attempts. Please try again later.');
+    });
   });
 
   describe('Phase 2: User Management CRUD', () => {
