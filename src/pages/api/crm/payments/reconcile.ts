@@ -3,7 +3,7 @@ import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
 import { getDb } from '@/lib/db';
 import { payments, orders, customers, services } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { verifySessionCookie, getSessionSecret } from '@/lib/auth';
 import { syncCustomerServices } from '@/lib/services/serviceManager';
 import { logDebug } from '@/lib/debug-logger';
@@ -104,8 +104,9 @@ export const POST: APIRoute = async (context) => {
       if (!isDirectPayment && paymentCustId) {
         const customerInfo = await db.select().from(customers).where(eq(customers.id, paymentCustId)).get();
         if (customerInfo) {
+          // @para-doc [#csa-sec-atomic-wallet]
           await db.update(customers)
-            .set({ balance: customerInfo.balance + currentPayment.amount })
+            .set({ balance: sql`${customers.balance} + ${currentPayment.amount}` })
             .where(eq(customers.id, paymentCustId));
         }
       }
@@ -140,9 +141,10 @@ export const POST: APIRoute = async (context) => {
           });
         }
 
-        // Deduct customer balance
+        // Deduct customer balance atomically
+        // @para-doc [#csa-sec-atomic-wallet]
         await db.update(customers)
-          .set({ balance: customerInfo.balance - currentPayment.amount })
+          .set({ balance: sql`${customers.balance} - ${currentPayment.amount}` })
           .where(eq(customers.id, targetCustomerId));
       }
     }

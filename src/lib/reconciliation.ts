@@ -668,7 +668,10 @@ export async function reconcileCustomerWallet(
   skipOrderId?: string
 ): Promise<void> {
   const customer = await db.select().from(customers).where(eq(customers.id, customerId)).get();
-  console.log('[DEBUG reconcileCustomerWallet start] customerId:', customerId, 'balance:', customer?.balance);
+  // @para-doc [#csa-sec-log-sanitation]
+  if (import.meta.env.DEV) {
+    console.log('[DEBUG reconcileCustomerWallet start] customerId:', customerId, 'balance:', customer?.balance);
+  }
   if (!customer) return;
 
   let currentBalance = customer.balance || 0;
@@ -694,10 +697,14 @@ export async function reconcileCustomerWallet(
     }
     return (a.createdAt || 0) - (b.createdAt || 0);
   });
-  console.log('[DEBUG reconcileCustomerWallet items] fetched items count:', partialOrders.length);
+  if (import.meta.env.DEV) {
+    console.log('[DEBUG reconcileCustomerWallet items] fetched items count:', partialOrders.length);
+  }
 
   for (const item of partialOrders) {
-    console.log('[DEBUG reconcileCustomerWallet] item:', item.id, 'amount:', item.amount, 'status:', item.status, 'currentBalance:', currentBalance);
+    if (import.meta.env.DEV) {
+      console.log('[DEBUG reconcileCustomerWallet] item:', item.id, 'amount:', item.amount, 'status:', item.status, 'currentBalance:', currentBalance);
+    }
     if (currentBalance <= 0) break;
 
     // Sum paid amount for this item (including both bank payments and wallet deductions)
@@ -708,7 +715,9 @@ export async function reconcileCustomerWallet(
 
     const totalPaid = sumResult?.total || 0;
     const remaining = item.amount - totalPaid;
-    console.log('[DEBUG reconcileCustomerWallet] totalPaid:', totalPaid, 'remaining:', remaining);
+    if (import.meta.env.DEV) {
+      console.log('[DEBUG reconcileCustomerWallet] totalPaid:', totalPaid, 'remaining:', remaining);
+    }
 
     if (remaining <= 0) {
       await db.update(orders).set({ status: 'paid', paidAt: Date.now(), updatedAt: Date.now() }).where(eq(orders.id, item.id));

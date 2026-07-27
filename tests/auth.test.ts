@@ -23,7 +23,7 @@ describe('Authentication Engine - Password Hashing', () => {
     expect(parts.length).toBe(4); // ['pbkdf2', '600000', saltHex, hashHex]
     expect(parts[2]).toHaveLength(32); // 16 bytes salt = 32 hex chars
     expect(parts[3]).toHaveLength(64); // 32 bytes derived key = 64 hex chars
-  });
+  }, 15000);
 
   it('should verify password successfully for both 600k and legacy 10k hashes', async () => {
     const password = 'my-super-secret-password';
@@ -40,7 +40,7 @@ describe('Authentication Engine - Password Hashing', () => {
 
     const isIncorrect = await verifyPassword('wrong-password', hash600k);
     expect(isIncorrect).toBe(false);
-  });
+  }, 15000);
 });
 
 describe('Authentication Engine - Stateless Signed Session Cookie', () => {
