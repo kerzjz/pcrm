@@ -53,9 +53,10 @@ describe('Rate Limiter Utility', () => {
     expect(res.remaining).toBe(0);
   });
 
-  it('should fail-open if KV is not configured (undefined)', async () => {
+  it('should fail-closed if KV is not configured (undefined)', async () => {
     const res = await checkRateLimit(undefined, '1.2.3.4', '/api/auth/login', 3, 10);
-    expect(res.allowed).toBe(true);
-    expect(res.remaining).toBe(3);
+    expect(res.allowed).toBe(false);
+    expect(res.remaining).toBe(0);
+    expect(res.retryAfterSeconds).toBe(60);
   });
 });

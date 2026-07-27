@@ -99,6 +99,12 @@ describe('Authentication Engine - Stateless Signed Session Cookie', () => {
   });
 });
 
+class MockKV {
+  store = new Map<string, string>();
+  async get(key: string): Promise<string | null> { return this.store.get(key) || null; }
+  async put(key: string, value: string): Promise<void> { this.store.set(key, value); }
+}
+
 describe('Authentication API Endpoints - Integration Tests', () => {
   const TEST_USER = {
     id: 'admin-uuid-9999',
@@ -131,7 +137,7 @@ describe('Authentication API Endpoints - Integration Tests', () => {
 
     const mockContext: any = {
       request: mockRequest,
-      locals: { runtime: { env: { SESSION_SECRET } } },
+      locals: { runtime: { env: { SESSION_SECRET, SESSION: new MockKV() } } },
       cookies: { set: () => {} }
     };
 
@@ -151,7 +157,7 @@ describe('Authentication API Endpoints - Integration Tests', () => {
 
     const mockContext: any = {
       request: mockRequest,
-      locals: { runtime: { env: { SESSION_SECRET } } },
+      locals: { runtime: { env: { SESSION_SECRET, SESSION: new MockKV() } } },
       cookies: { set: () => {} }
     };
 
@@ -174,7 +180,7 @@ describe('Authentication API Endpoints - Integration Tests', () => {
 
     const mockContext: any = {
       request: mockRequest,
-      locals: { runtime: { env: { SESSION_SECRET } } },
+      locals: { runtime: { env: { SESSION_SECRET, SESSION: new MockKV() } } },
       cookies: {
         set: (name: string, value: string) => {
           setCookieName = name;
@@ -235,7 +241,7 @@ describe('Authentication API Endpoints - Integration Tests', () => {
 
     const mockContext: any = {
       request: mockRequest,
-      locals: { runtime: { env: { SESSION_SECRET } } },
+      locals: { runtime: { env: { SESSION_SECRET, SESSION: new MockKV() } } },
       cookies: { set: () => {} }
     };
 
@@ -259,7 +265,7 @@ describe('Authentication API Endpoints - Integration Tests', () => {
 
     const mockContext: any = {
       request: mockRequest,
-      locals: { runtime: { env: { SESSION_SECRET, INITIAL_ADMIN_PASSWORD: 'custom-admin-password-123' } } },
+      locals: { runtime: { env: { SESSION_SECRET, SESSION: new MockKV(), INITIAL_ADMIN_PASSWORD: 'custom-admin-password-123' } } },
       cookies: { set: () => {} }
     };
 
@@ -320,7 +326,7 @@ describe('Authentication API Endpoints - Integration Tests', () => {
 
     const mockContext: any = {
       request: mockRequest,
-      locals: { runtime: { env: { SESSION_SECRET } } },
+      locals: { runtime: { env: { SESSION_SECRET, SESSION: new MockKV() } } },
       cookies: { set: () => {} }
     };
 

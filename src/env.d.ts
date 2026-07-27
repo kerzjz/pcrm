@@ -6,6 +6,7 @@ declare namespace App {
   interface Locals extends Runtime {
     user?: import("./lib/auth").SessionPayload;
     lang: 'vi' | 'en';
+    nonce?: string;
   }
 }
 

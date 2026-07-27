@@ -12,7 +12,8 @@ export const POST: APIRoute = async (context) => {
   try {
     // Check rate limiting first using Cloudflare KV namespace
     const clientIp = context.request.headers.get("CF-Connecting-IP") || context.clientAddress || "127.0.0.1";
-    const rateLimit = await checkRateLimit(env?.SESSION, clientIp, '/api/auth/login');
+    const kv = env?.SESSION || (context.locals as any)?.runtime?.env?.SESSION;
+    const rateLimit = await checkRateLimit(kv, clientIp, '/api/auth/login');
     if (!rateLimit.allowed) {
       return new Response(
         JSON.stringify({ 

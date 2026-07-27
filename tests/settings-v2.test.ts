@@ -25,7 +25,13 @@ import { GET as getSyncLogsHandler } from '../src/pages/api/settings/sync-logs';
 const SESSION_SECRET = 'fallback-secret-key-must-be-at-least-32-chars-long';
 process.env.SESSION_SECRET = SESSION_SECRET;
 
-function createMockContext(method: string, body?: any, sessionCookie?: string, params?: any) {
+class MockKV {
+  store = new Map<string, string>();
+  async get(key: string): Promise<string | null> { return this.store.get(key) || null; }
+  async put(key: string, value: string): Promise<void> { this.store.set(key, value); }
+}
+
+function createMockContext(method: string, body?: any, sessionCookie?: string, params?: any, kv?: any) {
   const request = new Request('http://localhost/api/settings', {
     method,
     body: body ? JSON.stringify(body) : undefined,
@@ -54,7 +60,7 @@ function createMockContext(method: string, body?: any, sessionCookie?: string, p
     params: params || {},
     clientAddress: '127.0.0.1',
     locals: {
-      runtime: { env: { SESSION_SECRET } },
+      runtime: { env: { SESSION_SECRET, SESSION: kv || new MockKV() } },
       user: sessionCookie ? { id: 'usr-admin', username: 'admin1', role: 'admin' } : undefined
     },
     setCookies
