@@ -9,7 +9,7 @@
   <p>Self-hosted financial and invoicing engine tailored for Vietnamese small businesses.</p>
 
   [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-  [![Version](https://img.shields.io/badge/Version-v0.13.2-blue.svg)](CHANGELOG.md)
+  [![Version](https://img.shields.io/badge/Version-v0.13.3-blue.svg)](CHANGELOG.md)
   ![Status](https://img.shields.io/badge/Status-Stable-brightgreen.svg)
   [![Built with Astro](https://img.shields.io/badge/Built%20with-Astro-BC52EE.svg?logo=astro&logoColor=white)](https://astro.build)
 
@@ -40,6 +40,10 @@
 
 ## ✨ Key Features
 
+- **Custom QR Transaction Prefixes & Clean Memo Formatting (v0.13.3):** 
+  - Dynamic `qr_quick_prefixes` configuration stored in D1 `config` table and managed via Settings UI.
+  - Interactive ⚙️ Quick-Edit modal in VietQR generator tool for on-the-fly prefix management.
+  - Pure `formatCleanMemo()` helper enforcing non-accented string sanitization and preventing duplicate prefix concatenation under VietQR's 50-character limit.
 - **Automated Cash-Flow Reconciliation:** Real-time bank transaction matching and invoice reconciliation via SePay Webhook with duplicate payload protection (`transactionId` unique constraint).
 - **Security Hardening (v0.13.1 & v0.13.2):** 
   - OWASP 2026-compliant PBKDF2 password hashing with **600,000 iterations** (`crypto.pbkdf2`) and transparent legacy hash upgrade on login.

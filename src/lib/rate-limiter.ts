@@ -14,6 +14,11 @@ export async function checkRateLimit(
   maxAttempts: number = 5,
   windowSeconds: number = 900
 ): Promise<RateLimitResult> {
+  // In local DEV mode (when not running unit tests), bypass rate limiting for seamless developer testing
+  if (import.meta.env.DEV && process.env.NODE_ENV !== 'test') {
+    return { allowed: true, remaining: maxAttempts };
+  }
+
   // @para-doc [#csa-sec-ratelimit-failclosed]
   if (!kv) {
     // Fail-closed: If KV namespace is missing, block requests to prevent brute-force attacks when KV is down

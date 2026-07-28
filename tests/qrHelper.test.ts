@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { removeAccents, generateQrMemo, calculateQrAmount } from '@/lib/qrHelper';
+import { removeAccents, generateQrMemo, calculateQrAmount, formatCleanMemo, parseQrPrefixesConfig, DEFAULT_QR_PREFIXES } from '@/lib/qrHelper';
 
 describe('QR Helper Logic (TDD)', () => {
   describe('removeAccents', () => {
@@ -41,6 +41,52 @@ describe('QR Helper Logic (TDD)', () => {
 
     it('should fallback gracefully', () => {
       expect(calculateQrAmount(0, 5)).toBe(0);
+    });
+  });
+
+  describe('formatCleanMemo', () => {
+    it('should format clean memo with prefix, service, and period = 1', () => {
+      // @ts-ignore
+      const memo = formatCleanMemo('AG1', 'Hồ Thị Nhận Duyên', 'TT DV', 'FB T200', 1);
+      expect(memo).toBe('AG1 - HO THI NHAN DUYEN - TT DV FB T200');
+    });
+
+    it('should format clean memo without transaction prefix', () => {
+      // @ts-ignore
+      const memo = formatCleanMemo('AG1', 'Hồ Thị Nhận Duyên', '', 'FB T200', 1);
+      expect(memo).toBe('AG1 - HO THI NHAN DUYEN - FB T200');
+    });
+
+    it('should format clean memo with period > 1', () => {
+      // @ts-ignore
+      const memo = formatCleanMemo('AG1', 'Hồ Thị Nhận Duyên', 'TT DV', 'FB T200', 3);
+      expect(memo).toBe('AG1 - HO THI NHAN DUYEN - TT DV FB T200 - X3');
+    });
+
+    it('should prevent prefix duplication if serviceName starts with transactionPrefix', () => {
+      // @ts-ignore
+      const memo = formatCleanMemo('AG1', 'Hồ Thị Nhận Duyên', 'TT DV', 'TT DV FB T200', 1);
+      expect(memo).toBe('AG1 - HO THI NHAN DUYEN - TT DV FB T200');
+    });
+
+    it('should return empty if customerId is missing', () => {
+      // @ts-ignore
+      const memo = formatCleanMemo('', 'Hồ Thị Nhận Duyên', 'TT DV', 'FB T200', 1);
+      expect(memo).toBe('');
+    });
+  });
+
+  describe('DEFAULT_QR_PREFIXES & parseQrPrefixesConfig', () => {
+    it('should return default prefixes when raw JSON is invalid or empty', () => {
+      // @ts-ignore
+      expect(parseQrPrefixesConfig('')).toEqual(['TT DV', 'TT GIA HAN', 'TT HOAN TIEN', 'TT TOOL']);
+      // @ts-ignore
+      expect(parseQrPrefixesConfig('invalid json')).toEqual(['TT DV', 'TT GIA HAN', 'TT HOAN TIEN', 'TT TOOL']);
+    });
+
+    it('should parse valid JSON prefix array', () => {
+      // @ts-ignore
+      expect(parseQrPrefixesConfig('["TT KH", "TT THANH TOAN"]')).toEqual(['TT KH', 'TT THANH TOAN']);
     });
   });
 });

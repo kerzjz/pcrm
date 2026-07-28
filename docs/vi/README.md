@@ -9,7 +9,7 @@
   <p>Bộ máy quản lý tài chính và hóa đơn tự vận hành tối ưu cho hộ kinh doanh Việt Nam.</p>
 
   [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](../../LICENSE)
-  [![Version](https://img.shields.io/badge/Version-v0.13.2-blue.svg)](../../CHANGELOG.md)
+  [![Version](https://img.shields.io/badge/Version-v0.13.3-blue.svg)](../../CHANGELOG.md)
   ![Status](https://img.shields.io/badge/Status-Stable-brightgreen.svg)
   [![Built with Astro](https://img.shields.io/badge/Built%20with-Astro-BC52EE.svg?logo=astro&logoColor=white)](https://astro.build)
 
@@ -40,6 +40,10 @@
 
 ## ✨ Tính năng nổi bật
 
+- **Tùy chỉnh Tiền tố Giao dịch QR & Chuẩn hóa Memo (v0.13.3):**
+  - Cấu hình động `qr_quick_prefixes` lưu trữ trong bảng `config` D1 và quản lý qua giao diện Cài đặt (Settings UI).
+  - Modal ⚙️ Cấu hình nhanh trực quan trong công cụ VietQR giúp thêm/sửa tiền tố giao dịch ngay tại chỗ.
+  - Hàm `formatCleanMemo()` tự động loại bỏ dấu tiếng Việt, chống lặp lại tiền tố và đảm bảo memo không vượt quá giới hạn 50 ký tự của VietQR.
 - **Đối soát Dòng tiền Tự động:** Đồng bộ và khớp giao dịch ngân hàng theo thời gian thực qua Webhook SePay, tích hợp cơ chế chống xử lý giao dịch trùng lặp (`transactionId` unique constraint).
 - **Củng cố Bảo mật Toàn diện (v0.13.1 & v0.13.2):**
   - Thuật toán băm mật khẩu PBKDF2 đạt chuẩn OWASP 2026 với **600,000 iterations** (`crypto.pbkdf2`) kèm cơ chế tự động rehash mật khẩu cũ khi đăng nhập.

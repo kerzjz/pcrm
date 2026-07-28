@@ -13,6 +13,7 @@ export const POST: APIRoute = async (context) => {
   let db: any = null;
   let requestBody: any = null;
   try {
+    // @para-doc [#csa-config-api-sec]
     // 1. Verify user session and permissions
     const sessionCookie = context.cookies.get('session')?.value;
     const secret = getSessionSecret();
@@ -36,6 +37,7 @@ export const POST: APIRoute = async (context) => {
     requestBody = body;
     const { key, value } = body;
 
+    // @para-doc [#csa-config-input-sanitization]
     if (!key || typeof value !== 'string') {
       return new Response(JSON.stringify({ error: 'Invalid configuration payload' }), {
         status: 400,

@@ -5,6 +5,7 @@ import { env } from 'cloudflare:workers';
 import { getDb } from '@/lib/db';
 import { customers, config, services, orders } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { parseQrPrefixesConfig, formatCleanMemo } from '@/lib/qrHelper';
 
 // Fetch initial data from database
 const db = getDb(env);
@@ -15,11 +16,14 @@ const defaultBankConfig = await db.select().from(config).where(eq(config.key, 'd
 const defaultAccountConfig = await db.select().from(config).where(eq(config.key, 'defaultAccount'));
 const orgNameConfig = await db.select().from(config).where(eq(config.key, 'orgName'));
 const orgLogoConfig = await db.select().from(config).where(eq(config.key, 'orgLogo'));
+const qrPrefixesConfig = await db.select().from(config).where(eq(config.key, 'qr_quick_prefixes'));
 
 const defaultBank = defaultBankConfig[0]?.value || 'MB';
 const defaultAccount = defaultAccountConfig[0]?.value || '0000000000';
 const orgName = orgNameConfig[0]?.value || 'Pageel CRM';
 const orgLogo = orgLogoConfig[0]?.value || '';
+const rawPrefixesJson = qrPrefixesConfig[0]?.value || '';
+const quickPrefixes = parseQrPrefixesConfig(rawPrefixesJson);
 
 // URL parameter for quick customer/order selection
 const url = new URL(Astro.request.url);
@@ -154,6 +158,26 @@ if (orderId) {
       background-color: var(--primary);
       border-color: var(--primary);
       color: #fff;
+    }
+
+    .btn-quick-config {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-quick-config:hover {
+      background-color: rgba(255, 93, 1, 0.1);
+      color: var(--primary);
     }
 
     .template-grid {
@@ -446,19 +470,34 @@ if (orderId) {
           </div>
         </div>
 
+        <!-- @para-doc [#csa-qr-tool-dynamic-buttons] -->
         <div class="input-group">
-          <span class="input-label">Service Name (Max 15 chars)</span>
-          <div class="button-grid" id="quickServices">
-            <button class="quick-btn" data-value="TT GIA HAN">GIA HAN</button>
-            <button class="quick-btn" data-value="TT DV FB">DV FB</button>
-            <button class="quick-btn" data-value="TT DV QTW">DV QTW</button>
-            <button class="quick-btn" data-value="TT TOOL">TOOL</button>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+            <span class="input-label">{lang === 'vi' ? 'Tiền tố giao dịch' : 'Transaction Prefix'}</span>
+            <button id="btnQuickConfigModal" type="button" class="btn-quick-config">
+              ⚙️ {lang === 'vi' ? 'Cấu hình nhanh' : 'Quick Config'}
+            </button>
           </div>
+          <div class="button-grid" id="quickPrefixesGrid">
+            {quickPrefixes.map((p: string) => (
+              <button type="button" class="quick-btn prefix-btn" data-value={p}>{p}</button>
+            ))}
+          </div>
+          <input 
+            type="text" 
+            id="transactionPrefixInput" 
+            placeholder={lang === 'vi' ? 'Ví dụ: TT DV, TT GIA HAN...' : 'e.g. TT DV, TT GIA HAN...'} 
+            class="text-input"
+          />
+        </div>
+
+        <div class="input-group">
+          <span class="input-label">{lang === 'vi' ? 'Tên / Mã gói dịch vụ (Tối đa 15 ký tự)' : 'Service Code / Name (Max 15 chars)'}</span>
           <input 
             type="text" 
             id="serviceInput" 
             maxlength="15" 
-            placeholder="Enter custom service name..." 
+            placeholder={lang === 'vi' ? 'Ví dụ: FB T200, FB, TOOL...' : 'e.g. FB T200, FB, TOOL...'} 
             class="text-input"
           />
         </div>
@@ -579,6 +618,21 @@ if (orderId) {
         </div>
       </div>
     </div>
+  <!-- @para-doc [#csa-qr-tool-quick-edit-modal] -->
+  <div id="quickConfigModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 90%; max-width: 480px; padding: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="font-size: 1rem; font-weight: 700; margin: 0; color: var(--text-primary);">⚙️ {lang === 'vi' ? 'Quản lý tiền tố thanh toán' : 'Manage Transaction Prefixes'}</h3>
+        <button id="closeQuickConfigModal" type="button" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
+      </div>
+      <div style="margin-bottom: 1.25rem;">
+        <label class="input-label" style="display: block; margin-bottom: 0.5rem;">{lang === 'vi' ? 'Danh sách tiền tố (phân cách bằng dấu phẩy)' : 'Prefixes List (comma-separated)'}</label>
+        <input type="text" id="modalPrefixesInput" class="text-input" value={quickPrefixes.join(', ')} placeholder="TT DV, TT GIA HAN, TT HOAN TIEN, TT TOOL" />
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button id="saveQuickConfigBtn" type="button" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: 8px; cursor: pointer;">{lang === 'vi' ? 'Lưu cấu hình' : 'Save Config'}</button>
+      </div>
+    </div>
   </div>
 
   <!-- Client-side state & UI handling -->
@@ -687,33 +741,11 @@ if (orderId) {
       // Multiply base price by periods
       amount = basePrice * period;
 
-      // Calculate Memo Content
+      // Calculate Memo Content using formatCleanMemo
       let finalMemo = '';
       if (selectedCustomerId) {
-        const namePart = removeAccents(selectedCustomerName).toUpperCase();
-        const servicePart = removeAccents(serviceName).toUpperCase();
-        
-        let prefixPart = '';
-        const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
-        if (selectedOption && selectedOption.value) {
-          prefixPart = (selectedOption.getAttribute('data-prefix') || '').toUpperCase();
-        }
-
-        finalMemo = `${selectedCustomerId} - ${namePart}`;
-
-        if (servicePart) {
-          finalMemo += ` - ${servicePart}`;
-        }
-
-        if (prefixPart && prefixPart !== servicePart) {
-          if (!servicePart.includes(prefixPart)) {
-            finalMemo += ` ${prefixPart}`;
-          }
-        }
-
-        if (period > 1) {
-          finalMemo += ` X${period}`;
-        }
+        const txPrefix = (transactionPrefixInput ? transactionPrefixInput.value : '').trim();
+        finalMemo = formatCleanMemo(selectedCustomerId, selectedCustomerName, txPrefix, serviceName, period);
       }
 
       // Update UI displays
@@ -865,12 +897,26 @@ if (orderId) {
 
         // Smart Service Auto-fill rules
         let calculatedName = prefix;
+        let matchedTxPrefix = '';
         if (prefixUpper.startsWith('FB ')) {
-          calculatedName = 'TT DV FB';
+          matchedTxPrefix = 'TT DV';
         } else if (prefixUpper.startsWith('QTW ')) {
-          calculatedName = 'TT DV QTW';
+          matchedTxPrefix = 'TT DV';
         } else if (prefixUpper.startsWith('TOOL ')) {
-          calculatedName = 'TT TOOL';
+          matchedTxPrefix = 'TT TOOL';
+        }
+
+        if (transactionPrefixInput && matchedTxPrefix) {
+          transactionPrefixInput.value = matchedTxPrefix;
+          // Set active state on matching quick prefix button
+          const prefixButtons = document.querySelectorAll('#quickPrefixesGrid .prefix-btn');
+          prefixButtons.forEach((btn) => {
+            if (btn.getAttribute('data-value') === matchedTxPrefix) {
+              btn.classList.add('active');
+            } else {
+              btn.classList.remove('active');
+            }
+          });
         }
 
         // Reset period to 1 when selecting a new catalog service
@@ -1130,6 +1176,118 @@ if (orderId) {
         console.error('Error sharing:', err);
       }
     });
+
+    // Format clean memo using formatCleanMemo logic
+    function formatCleanMemo(customerId, customerName, transactionPrefix, serviceName, period = 1) {
+      if (!customerId) return '';
+
+      const cleanName = removeAccents(customerName).toUpperCase();
+      const cleanService = removeAccents(serviceName).toUpperCase();
+      const cleanPrefix = removeAccents(transactionPrefix).toUpperCase();
+
+      const memoParts = [`${customerId} - ${cleanName}`];
+
+      let serviceSegment = '';
+      if (cleanPrefix) {
+        serviceSegment = cleanPrefix;
+      }
+
+      if (cleanService) {
+        if (serviceSegment) {
+          if (cleanService.startsWith(serviceSegment)) {
+            serviceSegment = cleanService;
+          } else {
+            serviceSegment += ` ${cleanService}`;
+          }
+        } else {
+          serviceSegment = cleanService;
+        }
+      }
+
+      if (serviceSegment) {
+        memoParts.push(serviceSegment);
+      }
+
+      if (period > 1) {
+        memoParts.push(`X${period}`);
+      }
+
+      return memoParts.join(' - ');
+    }
+
+    // Prefix buttons & input listeners
+    const transactionPrefixInput = document.getElementById('transactionPrefixInput');
+    if (transactionPrefixInput) {
+      transactionPrefixInput.addEventListener('input', updateState);
+    }
+
+    function bindPrefixButtons() {
+      const prefixButtons = document.querySelectorAll('#quickPrefixesGrid .prefix-btn');
+      prefixButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          prefixButtons.forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          if (transactionPrefixInput) {
+            transactionPrefixInput.value = btn.getAttribute('data-value') || '';
+          }
+          updateState();
+        });
+      });
+    }
+    bindPrefixButtons();
+
+    // Quick Config Modal handlers
+    const btnQuickConfigModal = document.getElementById('btnQuickConfigModal');
+    const closeQuickConfigModal = document.getElementById('closeQuickConfigModal');
+    const saveQuickConfigBtn = document.getElementById('saveQuickConfigBtn');
+
+    if (btnQuickConfigModal) {
+      btnQuickConfigModal.addEventListener('click', () => {
+        const modal = document.getElementById('quickConfigModal');
+        if (modal) modal.style.display = 'flex';
+      });
+    }
+
+    if (closeQuickConfigModal) {
+      closeQuickConfigModal.addEventListener('click', () => {
+        const modal = document.getElementById('quickConfigModal');
+        if (modal) modal.style.display = 'none';
+      });
+    }
+
+    if (saveQuickConfigBtn) {
+      saveQuickConfigBtn.addEventListener('click', async () => {
+        const modalPrefixesInput = document.getElementById('modalPrefixesInput');
+        const modal = document.getElementById('quickConfigModal');
+        saveQuickConfigBtn.disabled = true;
+        const raw = modalPrefixesInput ? modalPrefixesInput.value || '' : '';
+        const prefixes = raw.split(',').map((s) => s.trim()).filter(Boolean);
+        const prefixesJson = JSON.stringify(prefixes.length > 0 ? prefixes : ['TT DV', 'TT GIA HAN', 'TT HOAN TIEN', 'TT TOOL']);
+
+        try {
+          const res = await fetch('/api/crm/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'qr_quick_prefixes', value: prefixesJson })
+          });
+
+          if (!res.ok) throw new Error('Failed to update prefixes config');
+
+          // Update DOM grid dynamically
+          const grid = document.getElementById('quickPrefixesGrid');
+          if (grid) {
+            grid.innerHTML = prefixes.map((p) => `<button type="button" class="quick-btn prefix-btn" data-value="${escapeHtml(p)}">${escapeHtml(p)}</button>`).join('');
+            bindPrefixButtons();
+          }
+
+          if (modal) modal.style.display = 'none';
+        } catch (err) {
+          alert(err.message);
+        } finally {
+          saveQuickConfigBtn.disabled = false;
+        }
+      });
+    }
 
     // Initialize state on page load (if customerId, invoiceId or orderId parameter provided)
     if (initialOrder) {
