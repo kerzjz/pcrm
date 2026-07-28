@@ -1,5 +1,6 @@
 ---
 import { t } from '@/lib/i18n';
+import { parseQrPrefixesConfig } from '@/lib/qrHelper';
 
 interface Props {
   lang: 'vi' | 'en';
@@ -9,6 +10,7 @@ interface Props {
   serviceInvoiceContentTemplate: string;
   sepaySyncLimit: string;
   sepaySyncDays: string;
+  qrQuickPrefixes?: string;
   envStatus: {
     sepay: {
       webhookSecret: boolean;
@@ -23,7 +25,8 @@ interface Props {
   };
 }
 
-const { lang, isAdmin, defaultBank, defaultAccount, serviceInvoiceContentTemplate, envStatus, sepaySyncLimit, sepaySyncDays } = Astro.props;
+const { lang, isAdmin, defaultBank, defaultAccount, serviceInvoiceContentTemplate, envStatus, sepaySyncLimit, sepaySyncDays, qrQuickPrefixes } = Astro.props;
+const parsedPrefixes = parseQrPrefixesConfig(qrQuickPrefixes);
 ---
 
 <section id="integrations" class="settings-card tab-panel">
@@ -90,6 +93,15 @@ const { lang, isAdmin, defaultBank, defaultAccount, serviceInvoiceContentTemplat
           {t('settings.webhook_desc_template_hint', lang)}
         </small>
       </div>
+
+      <!-- @para-doc [#csa-settings-qr-prefixes-ui] -->
+      <div class="form-group mt-1">
+        <label for="qrQuickPrefixesInput" class="form-label">{lang === 'vi' ? 'Tiền tố thanh toán nhanh (QR Memos)' : 'Quick Transaction Prefixes (QR Memos)'}</label>
+        <input type="text" id="qrQuickPrefixesInput" class="form-input" value={parsedPrefixes.join(', ')} placeholder="TT DV, TT GIA HAN, TT HOAN TIEN, TT TOOL" />
+        <small style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem; display: block;">
+          {lang === 'vi' ? 'Phân cách các tiền tố bằng dấu phẩy (,)' : 'Separate prefixes with commas (,)'}
+        </small>
+      </div>
     </div>
 
     <div class="action-row border-top">
@@ -125,12 +137,16 @@ const { lang, isAdmin, defaultBank, defaultAccount, serviceInvoiceContentTemplat
         const templateInput = document.getElementById('webhookDescTemplateInput') as HTMLInputElement;
         const limitInput = document.getElementById('sepaySyncLimitInput') as HTMLInputElement;
         const daysInput = document.getElementById('sepaySyncDaysInput') as HTMLInputElement;
+        const prefixesInput = document.getElementById('qrQuickPrefixesInput') as HTMLInputElement;
         
         const bankVal = bankSelect ? bankSelect.value : 'MB';
         const accountVal = accountInput ? accountInput.value : '';
         const templateVal = templateInput ? templateInput.value : '';
         const limitVal = limitInput ? limitInput.value : '50';
         const daysVal = daysInput ? daysInput.value : '7';
+        const rawPrefixes = prefixesInput ? prefixesInput.value : '';
+        const prefixesArr = rawPrefixes.split(',').map((s) => s.trim()).filter(Boolean);
+        const prefixesJson = JSON.stringify(prefixesArr.length > 0 ? prefixesArr : ['TT DV', 'TT GIA HAN', 'TT HOAN TIEN', 'TT TOOL']);
 
         // Save defaultBank
         const bankRes = await fetch('/api/crm/config', {
@@ -171,6 +187,14 @@ const { lang, isAdmin, defaultBank, defaultAccount, serviceInvoiceContentTemplat
           body: JSON.stringify({ key: 'serviceInvoiceContentTemplate', value: templateVal })
         });
         if (!templateRes.ok) throw new Error('Auto webhook description template configuration failed');
+
+        // Save qr_quick_prefixes
+        const prefixesRes = await fetch('/api/crm/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: 'qr_quick_prefixes', value: prefixesJson })
+        });
+        if (!prefixesRes.ok) throw new Error('Transaction prefixes configuration failed');
 
         // Backward compatibility
         await fetch('/api/crm/config', {
