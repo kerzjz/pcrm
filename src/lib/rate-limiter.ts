@@ -19,11 +19,16 @@ export async function checkRateLimit(
     return { allowed: true, remaining: maxAttempts };
   }
 
-  // Graceful Degradation: If KV namespace binding is missing (e.g. in test or unattached Pages env),
-  // log warning and allow request to prevent blocking legitimate users with 429
-  if (!kv) {
-    console.warn(`[Rate Limiter Warning] KV binding missing for ${endpoint}, allowing request (graceful degradation)`);
+  // In local DEV mode (when not running unit tests), bypass rate limiting for seamless developer testing
+  if (import.meta.env.DEV && process.env.NODE_ENV !== 'test') {
     return { allowed: true, remaining: maxAttempts };
+  }
+
+  // @para-doc [#csa-sec-ratelimit-failclosed]
+  if (!kv) {
+    // Fail-closed: If KV namespace is missing, block requests to prevent brute-force attacks when KV is down
+    console.warn(`[Rate Limiter Warning] KV binding missing for ${endpoint}, failing closed`);
+    return { allowed: false, remaining: 0, retryAfterSeconds: 60 };
   }
 
   const key = `rl:${ip}:${endpoint}`;
