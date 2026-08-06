@@ -15,8 +15,9 @@ if (sessionCookie) {
   if (decoded) {
     return Astro.redirect('/dashboard');
   }
-}
-const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+import { env } from 'cloudflare:workers';
+
+const turnstileSiteKey = env?.PUBLIC_TURNSTILE_SITE_KEY || (Astro.locals as any)?.runtime?.env?.PUBLIC_TURNSTILE_SITE_KEY || import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 const nonce = Astro.locals.nonce;
 ---
 
@@ -210,7 +211,7 @@ const nonce = Astro.locals.nonce;
       </div>
 
       <div class="form-card">
-        <form id="loginForm">
+        <form id="loginForm" method="POST" action="/api/auth/login">
           <div id="errorBox" class="error-message">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 16px; height: 16px; flex-shrink: 0;">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
@@ -264,12 +265,17 @@ const nonce = Astro.locals.nonce;
         const formData = new FormData(form);
         const username = formData.get('username');
         const password = formData.get('password');
+        const turnstileToken = (formData.get('cf-turnstile-response') || (window as any).turnstile?.getResponse()) as string;
 
         try {
           const res = await fetch('/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({
+              username,
+              password,
+              'cf-turnstile-response': turnstileToken
+            })
           });
 
           const data = await res.json();
