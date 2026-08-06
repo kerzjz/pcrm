@@ -30,7 +30,7 @@ const nonce = Astro.locals.nonce;
     <title>Sign In | Pageel CRM</title>
     <meta name="description" content="Access the premium Pageel CRM platform" />
     {turnstileSiteKey && (
-      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+      <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     )}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
