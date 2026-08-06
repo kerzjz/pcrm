@@ -244,13 +244,13 @@ const nonce = Astro.locals.nonce;
       </div>
     </div>
 
-    <script>
-      const form = document.getElementById('loginForm') as HTMLFormElement;
-      const submitBtn = document.getElementById('submitBtn') as HTMLButtonElement;
-      const btnSpinner = document.getElementById('btnSpinner') as HTMLSpanElement;
-      const btnText = document.getElementById('btnText') as HTMLSpanElement;
-      const errorBox = document.getElementById('errorBox') as HTMLDivElement;
-      const errorText = document.getElementById('errorText') as HTMLSpanElement;
+    <script nonce={nonce}>
+      const form = document.getElementById('loginForm');
+      const submitBtn = document.getElementById('submitBtn');
+      const btnSpinner = document.getElementById('btnSpinner');
+      const btnText = document.getElementById('btnText');
+      const errorBox = document.getElementById('errorBox');
+      const errorText = document.getElementById('errorText');
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -266,7 +266,7 @@ const nonce = Astro.locals.nonce;
         const formData = new FormData(form);
         const username = formData.get('username');
         const password = formData.get('password');
-        const turnstileToken = (formData.get('cf-turnstile-response') || (window as any).turnstile?.getResponse()) as string;
+        const turnstileToken = formData.get('cf-turnstile-response') || window.turnstile?.getResponse();
 
         try {
           const res = await fetch('/api/auth/login', {
@@ -296,7 +296,7 @@ const nonce = Astro.locals.nonce;
         }
       });
 
-      function showError(msg: string) {
+      function showError(msg) {
         errorText.textContent = msg;
         errorBox.style.display = 'flex';
       }
