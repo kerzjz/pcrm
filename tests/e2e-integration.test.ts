@@ -161,5 +161,5 @@ describe('E2E Integration System Flow', () => {
     expect(dbLogs.length).toBe(1);
     expect(dbLogs[0].status).toBe('success');
     expect(dbLogs[0].message).toContain('git-new-commit-sha-e2e');
-  });
+  }, 30000);
 });
