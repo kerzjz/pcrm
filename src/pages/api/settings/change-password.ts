@@ -18,7 +18,15 @@ export const POST: APIRoute = async (context) => {
     // Check rate limit first
     // @para-doc [#csa-sec-changepass-ratelimit]
     const clientIp = context.request.headers.get('CF-Connecting-IP') || context.clientAddress || '127.0.0.1';
-    const kv = env?.SESSION || (context.locals as any)?.runtime?.env?.SESSION;
+    let runtimeEnv: any = env;
+    try {
+      if ((context.locals as any)?.runtime?.env) {
+        runtimeEnv = (context.locals as any).runtime.env;
+      }
+    } catch {
+      runtimeEnv = env || process.env;
+    }
+    const kv = runtimeEnv?.SESSION;
     const rateLimit = await checkRateLimit(kv, clientIp, '/api/settings/change-password', 10, 3600);
     if (!rateLimit.allowed) {
       return new Response(

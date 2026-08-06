@@ -11,8 +11,15 @@ import { verifyTurnstile } from '@/lib/turnstile';
 // @para-doc [#csa-auth-login]
 export const POST: APIRoute = async (context) => {
   try {
-    // 0. Resolve Cloudflare Pages / Workers runtime environment (prioritizes context.locals.runtime.env)
-    const runtimeEnv = (context.locals as any)?.runtime?.env || env || process.env;
+    // 0. Resolve Cloudflare Pages / Workers runtime environment (Astro v6 safe fallback)
+    let runtimeEnv: any = env;
+    try {
+      if ((context.locals as any)?.runtime?.env) {
+        runtimeEnv = (context.locals as any).runtime.env;
+      }
+    } catch {
+      runtimeEnv = env || process.env;
+    }
 
     // Check rate limiting first using Cloudflare KV namespace
     const clientIp = context.request.headers.get("CF-Connecting-IP") || context.clientAddress || "127.0.0.1";
@@ -34,8 +41,25 @@ export const POST: APIRoute = async (context) => {
       );
     }
 
-    const body = await context.request.json();
-    const { username, password, turnstileToken, 'cf-turnstile-response': cfTurnstileToken } = body;
+    let username = '';
+    let password = '';
+    let turnstileToken = '';
+    let cfTurnstileToken = '';
+
+    const contentType = context.request.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const body = await context.request.json().catch(() => ({}));
+      username = body.username || '';
+      password = body.password || '';
+      turnstileToken = body.turnstileToken || '';
+      cfTurnstileToken = body['cf-turnstile-response'] || '';
+    } else {
+      const formData = await context.request.formData().catch(() => new FormData());
+      username = (formData.get('username') as string) || '';
+      password = (formData.get('password') as string) || '';
+      turnstileToken = (formData.get('turnstileToken') as string) || '';
+      cfTurnstileToken = (formData.get('cf-turnstile-response') as string) || '';
+    }
 
     // Turnstile bot protection gate (graceful degradation if key is absent)
     // @para-doc [#csa-sec-turnstile]
