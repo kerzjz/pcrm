@@ -231,8 +231,8 @@ const nonce = Astro.locals.nonce;
           </div>
 
           {turnstileSiteKey && (
-            <div class="form-group" style="margin-bottom: 1rem; display: flex; justify-content: center;">
-              <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="light"></div>
+            <div class="form-group" style="margin-bottom: 1.25rem; display: flex; justify-content: center; width: 100%;">
+              <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="light" data-size="flexible" style="width: 100%;"></div>
             </div>
           )}
 

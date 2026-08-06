@@ -196,6 +196,8 @@ describe('CSP Content Security Policy (S4)', () => {
     const csp = response.headers.get('Content-Security-Policy');
     expect(csp).not.toBeNull();
     expect(csp).toContain('https://img.vietqr.io');
+    expect(csp).toContain('frame-src https://challenges.cloudflare.com');
+    expect(csp).toContain('connect-src \'self\' https://challenges.cloudflare.com');
   });
 });
 

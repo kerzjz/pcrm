@@ -117,7 +117,7 @@ function addSecurityHeaders(response: Response, nonce?: string): Response {
 
   response.headers.set(
     'Content-Security-Policy',
-    `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://img.vietqr.io; font-src 'self' https://fonts.gstatic.com`
+    `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://img.vietqr.io; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com`
   );
   // HSTS only in production
   if (import.meta.env.PROD) {
