@@ -53,15 +53,17 @@ export const POST: APIRoute = async (context) => {
     }
 
     // 1. Get database client (injects platform env if running on Cloudflare)
-    const db = getDb(env);
+    const runtimeEnv = env || (context.locals as any)?.runtime?.env;
+    const db = getDb(runtimeEnv);
 
     // 1.5 Auto-Seed Admin user if DB is empty
     // @para-doc [#csa-sec-admin-seed]
     const existingUsers = await db.select().from(users).limit(1);
     if (existingUsers.length === 0) {
-      const adminUsername = env?.INITIAL_ADMIN_USERNAME || import.meta.env.INITIAL_ADMIN_USERNAME || 'admin';
-      const adminPassword = env?.INITIAL_ADMIN_PASSWORD || import.meta.env.INITIAL_ADMIN_PASSWORD;
+      const adminUsername = runtimeEnv?.INITIAL_ADMIN_USERNAME || import.meta.env.INITIAL_ADMIN_USERNAME || 'admin';
+      const adminPassword = runtimeEnv?.INITIAL_ADMIN_PASSWORD || import.meta.env.INITIAL_ADMIN_PASSWORD;
       if (!adminPassword) {
+        console.error('[Login Auto-Seed Error] INITIAL_ADMIN_PASSWORD is not configured in environment secrets.');
         throw new Error('INITIAL_ADMIN_PASSWORD is not configured in environment secrets.');
       }
       const adminHash = await hashPassword(adminPassword);
@@ -141,6 +143,7 @@ export const POST: APIRoute = async (context) => {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (e: any) {
+    console.error('[Login API Exception]:', e?.message || e);
     return new Response(
       JSON.stringify({ error: 'Internal Server Error', ...(import.meta.env.DEV && { details: e.message }) }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
