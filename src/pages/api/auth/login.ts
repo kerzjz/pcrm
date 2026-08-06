@@ -11,9 +11,12 @@ import { verifyTurnstile } from '@/lib/turnstile';
 // @para-doc [#csa-auth-login]
 export const POST: APIRoute = async (context) => {
   try {
+    // 0. Resolve Cloudflare Pages / Workers runtime environment
+    const runtimeEnv = env || (context.locals as any)?.runtime?.env;
+
     // Check rate limiting first using Cloudflare KV namespace
     const clientIp = context.request.headers.get("CF-Connecting-IP") || context.clientAddress || "127.0.0.1";
-    const kv = env?.SESSION || (context.locals as any)?.runtime?.env?.SESSION;
+    const kv = runtimeEnv?.SESSION;
     const rateLimit = await checkRateLimit(kv, clientIp, '/api/auth/login');
     if (!rateLimit.allowed) {
       return new Response(
@@ -36,7 +39,7 @@ export const POST: APIRoute = async (context) => {
 
     // Turnstile bot protection gate (graceful degradation if key is absent)
     // @para-doc [#csa-sec-turnstile]
-    const turnstileSecret = env?.TURNSTILE_SECRET_KEY || import.meta.env.TURNSTILE_SECRET_KEY || process.env.TURNSTILE_SECRET_KEY;
+    const turnstileSecret = runtimeEnv?.TURNSTILE_SECRET_KEY || import.meta.env.TURNSTILE_SECRET_KEY || process.env.TURNSTILE_SECRET_KEY;
     const turnstileResult = await verifyTurnstile(cfTurnstileToken || turnstileToken, turnstileSecret, clientIp);
     if (!turnstileResult.success) {
       return new Response(
@@ -53,7 +56,6 @@ export const POST: APIRoute = async (context) => {
     }
 
     // 1. Get database client (injects platform env if running on Cloudflare)
-    const runtimeEnv = env || (context.locals as any)?.runtime?.env;
     const db = getDb(runtimeEnv);
 
     // 1.5 Auto-Seed Admin user if DB is empty
