@@ -47,8 +47,7 @@ scripts/test-backup-manual.ts
 scripts/test-backup-manual.js
 
 # Local SQL dumps (sensitive data)
-*local.sql
-migration.sql
+*.sql
 scripts/*.sql
 
 # TypeScript build cache
