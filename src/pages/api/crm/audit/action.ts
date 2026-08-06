@@ -5,6 +5,7 @@ import { getDb } from '@/lib/db';
 import { orders, payments } from '@/lib/db/schema';
 import { verifySessionCookie, getSessionSecret } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
+import { safeErrorResponse } from '@/lib/error-handler';
 import { eq } from 'drizzle-orm';
 
 // @para-doc [reconciliation-spec.md#22-api-thuc-thi-don-dep-post-apicrmauditaction]
@@ -117,9 +118,6 @@ export const POST: APIRoute = async (context) => {
     });
   } catch (err: any) {
     // @para-doc [#csa-sec-error-suppression]
-    return new Response(JSON.stringify({ error: 'Internal Server Error', ...(import.meta.env.DEV && { details: err.message }) }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return safeErrorResponse(err, 'Internal Server Error');
   }
 };

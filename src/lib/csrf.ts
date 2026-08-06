@@ -28,11 +28,11 @@ export function validateOrigin(
     return true;
   }
 
-  // 2. No Origin header — same-origin navigational request (allow, but emit audit warning)
+  // 2. No Origin header — reject null origin on mutation routes for security
   // @para-doc [#csa-sec-csrf-origin-log]
   if (!origin) {
-    console.warn('[CSRF Audit Warning] Empty origin header on mutation route', { pathname, host });
-    return true;
+    console.warn('[CSRF Rejection] Empty origin header on mutation route', { pathname, host });
+    return false;
   }
 
   // 3. Parse origin to extract hostname

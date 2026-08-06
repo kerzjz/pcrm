@@ -726,9 +726,10 @@ export async function reconcileCustomerWallet(
 
     // @para-doc [#csa-wallet-cash]
     if (currentBalance >= remaining) {
-      // Deduct from balance
+      // Deduct from balance using atomic SQL subtraction
       currentBalance -= remaining;
-      await db.update(customers).set({ balance: currentBalance }).where(eq(customers.id, customerId));
+      // @para-doc [#csa-sec-atomic-wallet]
+      await db.update(customers).set({ balance: sql`${customers.balance} - ${remaining}` }).where(eq(customers.id, customerId));
 
       // Update status
       await db.update(orders).set({ status: 'paid', paidAt: Date.now(), updatedAt: Date.now() }).where(eq(orders.id, item.id));

@@ -7,6 +7,7 @@ import {
   verifySessionCookie,
   type SessionPayload,
 } from '../src/lib/auth';
+import { validateOrigin } from '../src/lib/csrf';
 
 // ============================================================
 // 7.2 Session TTL Expiry Tests
@@ -105,13 +106,12 @@ describe('CSRF Origin Validation (S1)', () => {
     expect(result).toBe(true);
   });
 
-  it('should accept POST with no origin header (same-origin form submit) and log audit warning', () => {
+  it('should reject POST with no origin header for mutation route and log audit warning', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    // Browsers omit Origin header for same-origin navigational requests
     const result = validateOrigin(null, 'mycrm.example.com', '/api/crm/customers');
-    expect(result).toBe(true);
+    expect(result).toBe(false);
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('[CSRF Audit Warning] Empty origin header on mutation route'),
+      expect.stringContaining('[CSRF Rejection] Empty origin header on mutation route'),
       expect.anything()
     );
     warnSpy.mockRestore();
@@ -196,6 +196,16 @@ describe('CSP Content Security Policy (S4)', () => {
     const csp = response.headers.get('Content-Security-Policy');
     expect(csp).not.toBeNull();
     expect(csp).toContain('https://img.vietqr.io');
+  });
+});
+
+describe('CSRF Null Origin Rejection (Task 2.5)', () => {
+  it('should reject null origin for mutation routes', () => {
+    expect(validateOrigin(null, 'crm.example.com', '/api/crm/orders')).toBe(false);
+  });
+
+  it('should allow null origin for CSRF exempt paths like webhooks', () => {
+    expect(validateOrigin(null, 'crm.example.com', '/api/webhook/sepay')).toBe(true);
   });
 });
 

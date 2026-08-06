@@ -182,7 +182,10 @@ describe('Astro Middleware - Authentication & RBAC', () => {
 
       const mockContext: any = {
         url: new URL('http://localhost/api/crm/customers/1005'),
-        request: new Request('http://localhost/api/crm/customers/1005', { method: 'PUT' }),
+        request: new Request('http://localhost/api/crm/customers/1005', {
+          method: 'PUT',
+          headers: { 'Origin': 'http://localhost' }
+        }),
         cookies: {
           get: (name: string) => name === 'session' ? { value: cookieValue } : null
         },
@@ -311,7 +314,7 @@ describe('Astro Middleware - Authentication & RBAC', () => {
       expect(nextCalled).toHaveBeenCalled();
     });
 
-    it('should allow mutation request without Origin header (navigational or same-origin form submits)', async () => {
+    it('should reject mutation request without Origin header (CSRF protection)', async () => {
       const cookieValue = await createSessionCookie(validPayload, SESSION_SECRET);
       const mockContext: any = {
         url: new URL('http://localhost/api/crm/customers'),
@@ -328,8 +331,7 @@ describe('Astro Middleware - Authentication & RBAC', () => {
       const nextCalled = vi.fn().mockResolvedValue(nextResponse);
       const response = await onRequest(mockContext, nextCalled);
 
-      expect(response.status).toBe(200);
-      expect(nextCalled).toHaveBeenCalled();
+      expect(response.status).toBe(403);
     });
 
     it('should allow mutation request with matching Origin header', async () => {
@@ -372,7 +374,7 @@ describe('Astro Middleware - Authentication & RBAC', () => {
 
       const csp = response.headers.get('Content-Security-Policy');
       expect(csp).toBeDefined();
-      expect(csp).toContain("script-src 'self' 'unsafe-inline'");
+      expect(csp).toContain("script-src 'self' 'nonce-");
     });
   });
 });

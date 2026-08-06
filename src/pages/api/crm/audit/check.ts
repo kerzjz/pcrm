@@ -2,6 +2,7 @@
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
 import { getDb } from '@/lib/db';
+import { safeErrorResponse } from '@/lib/error-handler';
 import { orders, payments } from '@/lib/db/schema';
 import { verifySessionCookie, getSessionSecret } from '@/lib/auth';
 import { eq, and, isNotNull, isNull, ne } from 'drizzle-orm';
@@ -135,9 +136,6 @@ export const GET: APIRoute = async (context) => {
     });
   } catch (err: any) {
     // @para-doc [#csa-sec-error-suppression]
-    return new Response(JSON.stringify({ error: 'Internal Server Error', ...(import.meta.env.DEV && { details: err.message }) }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return safeErrorResponse(err, 'Internal Server Error');
   }
 };

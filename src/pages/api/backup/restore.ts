@@ -4,6 +4,7 @@ import { getDb, runTransaction } from '@/lib/db';
 import { fetchBackupContent } from '@/lib/backup/githubClient';
 import { users, staff, customers, orders, payments, config, syncLogs, services, customerServices, auditLogs } from '@/lib/db/schema';
 import { logDebug } from '@/lib/debug-logger';
+import { safeErrorResponse } from '@/lib/error-handler';
 import { eq } from 'drizzle-orm';
 
 // @para-doc [operations-guide.md#5-huong-dan-khoi-phuc-du-lieu-database-disaster-recovery]
@@ -225,9 +226,7 @@ export async function POST(context: any) {
       runAt: Date.now(),
     });
 
-    return new Response(JSON.stringify({ success: false, error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    // @para-doc [#csa-sec-error-suppression]
+    return safeErrorResponse(error, 'Restore failed');
   }
 }

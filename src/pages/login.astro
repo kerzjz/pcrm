@@ -16,6 +16,8 @@ if (sessionCookie) {
     return Astro.redirect('/dashboard');
   }
 }
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+const nonce = Astro.locals.nonce;
 ---
 
 <!doctype html>
@@ -25,6 +27,9 @@ if (sessionCookie) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sign In | Pageel CRM</title>
     <meta name="description" content="Access the premium Pageel CRM platform" />
+    {turnstileSiteKey && (
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    )}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
@@ -222,6 +227,12 @@ if (sessionCookie) {
             <label for="password">Password</label>
             <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password" />
           </div>
+
+          {turnstileSiteKey && (
+            <div class="form-group" style="margin-bottom: 1rem; display: flex; justify-content: center;">
+              <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="light"></div>
+            </div>
+          )}
 
           <button type="submit" id="submitBtn" class="submit-btn">
             <span class="spinner" id="btnSpinner"></span>

@@ -5,6 +5,7 @@ import { reconcilePayment } from '@/lib/reconciliation';
 import { config, payments } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { logDebug } from '@/lib/debug-logger';
+import { safeErrorResponse } from '@/lib/error-handler';
 
 // @para-doc [sepay-integration.md#2-cau-hinh-quet-giao-dich-chu-dong-sync-api]
 export async function POST(context: any) {
@@ -236,15 +237,7 @@ export async function POST(context: any) {
       message: error.message,
       stack: error.stack
     });
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: `Failed to sync transactions from SePay: ${error.message}`,
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    // @para-doc [#csa-sec-error-suppression]
+    return safeErrorResponse(error, 'Failed to sync transactions from SePay');
   }
 }

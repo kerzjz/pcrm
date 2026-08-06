@@ -6,6 +6,7 @@ import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { verifySessionCookie, verifyPassword, hashPassword, getSessionSecret } from '@/lib/auth';
 import { checkRateLimit } from '@/lib/rate-limiter';
+import { verifyTurnstile } from '@/lib/turnstile';
 import { logAudit } from '@/lib/audit';
 import { logDebug } from '@/lib/debug-logger';
 
@@ -54,7 +55,18 @@ export const POST: APIRoute = async (context) => {
 
     const body = await context.request.json();
     requestBody = body;
-    const { currentPassword, newPassword } = body;
+    const { currentPassword, newPassword, turnstileToken, 'cf-turnstile-response': cfTurnstileToken } = body;
+
+    // Turnstile bot protection gate
+    // @para-doc [#csa-sec-turnstile]
+    const turnstileSecret = env?.TURNSTILE_SECRET_KEY || import.meta.env.TURNSTILE_SECRET_KEY || process.env.TURNSTILE_SECRET_KEY;
+    const turnstileResult = await verifyTurnstile(cfTurnstileToken || turnstileToken, turnstileSecret, clientIp);
+    if (!turnstileResult.success) {
+      return new Response(
+        JSON.stringify({ error: 'CAPTCHA verification failed. Please try again.' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!currentPassword || !newPassword || typeof currentPassword !== 'string' || typeof newPassword !== 'string') {
       return new Response(JSON.stringify({ error: 'Invalid password fields' }), {

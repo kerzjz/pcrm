@@ -1,4 +1,5 @@
 import { env } from 'cloudflare:workers';
+import { sanitizeError } from '@/lib/error-handler';
 
 // @para-doc [operations-guide.md#5-huong-dan-khoi-phuc-du-lieu-database-disaster-recovery]
 export async function POST(context: any) {
@@ -102,20 +103,4 @@ export async function POST(context: any) {
       headers: { 'Content-Type': 'application/json' },
     });
   }
-}
-
-// @para-doc [operations-guide.md#5-huong-dan-khoi-phuc-du-lieu-database-disaster-recovery]
-function sanitizeError(error: any): string {
-  if (!error) return 'Unknown error';
-  let message = error.message || String(error);
-  
-  // Redact GitHub Classic PAT (ghp_...) and Fine-grained PAT (github_pat_...)
-  message = message.replace(/ghp_[a-zA-Z0-9]{36}/g, 'ghp_***');
-  message = message.replace(/github_pat_[a-zA-Z0-9_]{82}/g, 'github_pat_***');
-  
-  // Redact potential Bearer / Basic tokens in URLs or error details
-  message = message.replace(/Authorization:\\s*Bearer\\s+[a-zA-Z0-9_.-]+/gi, 'Authorization: Bearer ***');
-  message = message.replace(/Authorization:\\s*Basic\\s+[a-zA-Z0-9_./+-]+/gi, 'Authorization: Basic ***');
-  
-  return message;
 }

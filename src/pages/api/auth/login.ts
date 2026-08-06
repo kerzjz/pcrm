@@ -6,6 +6,7 @@ import { users, customers } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { verifyPassword, createSessionCookie, hashPassword, getSessionSecret } from '@/lib/auth';
 import { checkRateLimit } from '@/lib/rate-limiter';
+import { verifyTurnstile } from '@/lib/turnstile';
 
 // @para-doc [#csa-auth-login]
 export const POST: APIRoute = async (context) => {
@@ -31,7 +32,18 @@ export const POST: APIRoute = async (context) => {
     }
 
     const body = await context.request.json();
-    const { username, password } = body;
+    const { username, password, turnstileToken, 'cf-turnstile-response': cfTurnstileToken } = body;
+
+    // Turnstile bot protection gate (graceful degradation if key is absent)
+    // @para-doc [#csa-sec-turnstile]
+    const turnstileSecret = env?.TURNSTILE_SECRET_KEY || import.meta.env.TURNSTILE_SECRET_KEY || process.env.TURNSTILE_SECRET_KEY;
+    const turnstileResult = await verifyTurnstile(cfTurnstileToken || turnstileToken, turnstileSecret, clientIp);
+    if (!turnstileResult.success) {
+      return new Response(
+        JSON.stringify({ error: 'CAPTCHA verification failed. Please try again.' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!username || !password) {
       return new Response(
