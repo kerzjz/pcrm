@@ -1,6 +1,7 @@
 ---
 
 import '@/styles/design-system.css';
+import { env } from 'cloudflare:workers';
 
 // Redirect if already logged in
 const sessionCookie = Astro.cookies.get('session')?.value;
@@ -16,9 +17,8 @@ if (sessionCookie) {
     return Astro.redirect('/dashboard');
   }
 }
-import { env } from 'cloudflare:workers';
 
-const turnstileSiteKey = env?.PUBLIC_TURNSTILE_SITE_KEY || (Astro.locals as any)?.runtime?.env?.PUBLIC_TURNSTILE_SITE_KEY || import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+const turnstileSiteKey = env?.PUBLIC_TURNSTILE_SITE_KEY || import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 const nonce = Astro.locals.nonce;
 ---
 
