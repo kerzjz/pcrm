@@ -116,7 +116,7 @@ const jsonStructure = `{
     </div>
 
     <!-- Backup List Section -->
-    <div class="sub-section border-top" id="backupListSection" style="display: none; margin-top: 1.5rem;">
+    <div class="sub-section border-top" id="backupListSection" style="display: block; margin-top: 1.5rem;">
       <h3>{lang === 'vi' ? 'Lịch sử sao lưu trên GitHub' : 'GitHub Backup History'}</h3>
       <div class="table-container" style="margin-top: 0.75rem;">
         <table class="data-table">
@@ -166,205 +166,235 @@ const jsonStructure = `{
 </div>
 
 <script is:inline nonce={nonce}>
-  const layout = document.querySelector('.settings-layout');
-  const i18n = JSON.parse(layout?.getAttribute('data-i18n') || '{}');
-  const lang = layout?.getAttribute('data-lang') || 'vi';
+  function initBackupSettings() {
+    const layout = document.querySelector('.settings-layout');
+    const i18n = JSON.parse(layout?.getAttribute('data-i18n') || '{}');
+    const lang = layout?.getAttribute('data-lang') || 'vi';
 
-  function showToast(message, type = 'success') {
-    const event = new CustomEvent('show-toast', { detail: { message, type } });
-    window.dispatchEvent(event);
-  }
+    function showToast(message, type = 'success') {
+      const event = new CustomEvent('show-toast', { detail: { message, type } });
+      window.dispatchEvent(event);
+    }
 
-  // Load backups list
-  const backupListSection = document.getElementById('backupListSection');
-  const backupListBody = document.getElementById('backupListBody');
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
 
-  async function loadBackupList() {
-    if (!backupListBody) return;
-    try {
-      const res = await fetch('/api/backup');
-      const data = await res.json();
-      if (res.ok && data.success) {
-        const backups = data.backups || [];
-        if (backups.length === 0) {
-          backupListBody.innerHTML = `
-            <tr>
-              <td colspan="3" class="text-center text-secondary" style="padding: 1.5rem;">${lang === 'vi' ? 'Không tìm thấy bản sao lưu nào' : 'No backups found'}</td>
-            </tr>
-          `;
-        } else {
-          backupListBody.innerHTML = backups.map((b) => {
-            const sizeKb = (b.size / 1024).toFixed(1);
-            
-            // Parse date from file name: backup-YYYY-MM-DDTHH-mm-ss-SSSZ.json
-            let displayDate = b.name;
-            const dateMatch = b.name.match(/backup-(.+)\.json/);
-            if (dateMatch && dateMatch[1]) {
-              const rawIso = dateMatch[1];
-              const parts = rawIso.split('T');
-              if (parts.length === 2) {
-                const datePart = parts[0];
-                // Replace - with : for hours:minutes:seconds
-                const timePart = parts[1].replace(/-/g, ':').replace(/:([^:]*)$/, '.$1');
-                const cleanIso = `${datePart}T${timePart}`;
-                const parsedDate = new Date(cleanIso);
-                if (!isNaN(parsedDate.getTime())) {
-                  displayDate = parsedDate.toLocaleString(lang === 'vi' ? 'vi-VN' : 'en-US');
-                }
-              }
-            }
-
-            return `
+    async function loadBackupList() {
+      const backupListSection = document.getElementById('backupListSection');
+      const backupListBody = document.getElementById('backupListBody');
+      if (!backupListBody) return;
+      if (backupListSection) backupListSection.style.display = 'block';
+      try {
+        const res = await fetch('/api/backup');
+        const data = await res.json();
+        if (res.ok && data.success) {
+          const backups = data.backups || [];
+          if (backups.length === 0) {
+            backupListBody.innerHTML = `
               <tr>
-                <td style="padding: 0.75rem 1rem;">
-                  <div style="font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 14px; height: 14px; color: var(--primary);"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    ${displayDate}
-                  </div>
-                  <div style="font-family: monospace; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
-                    backups/${b.name}
-                  </div>
-                </td>
-                <td class="whitespace-nowrap text-secondary" style="font-weight: 500;">${sizeKb} KB</td>
-                <td class="whitespace-nowrap" style="text-align: right; padding-right: 1.5rem;">
-                  <button class="btn-small-secondary btn-restore" data-url="${b.downloadUrl}" data-name="${b.name}" style="display: inline-flex; align-items: center; gap: 0.35rem;">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 12px; height: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" /></svg>
-                    ${lang === 'vi' ? 'Khôi phục' : 'Restore'}
-                  </button>
-                </td>
+                <td colspan="3" class="text-center text-secondary" style="padding: 1.5rem;">${lang === 'vi' ? 'Chưa có bản sao lưu nào trên GitHub' : 'No backups found on GitHub'}</td>
               </tr>
             `;
-          }).join('');
+          } else {
+            backupListBody.innerHTML = backups.map((b) => {
+              const sizeKb = (b.size / 1024).toFixed(1);
+              let displayDate = b.name;
+              const dateMatch = b.name.match(/backup-(.+)\.json/);
+              if (dateMatch && dateMatch[1]) {
+                const rawIso = dateMatch[1];
+                const parts = rawIso.split('T');
+                if (parts.length === 2) {
+                  const datePart = parts[0];
+                  const timePart = parts[1].replace(/-/g, ':').replace(/:([^:]*)$/, '.$1');
+                  const cleanIso = `${datePart}T${timePart}`;
+                  const parsedDate = new Date(cleanIso);
+                  if (!isNaN(parsedDate.getTime())) {
+                    displayDate = parsedDate.toLocaleString(lang === 'vi' ? 'vi-VN' : 'en-US');
+                  }
+                }
+              }
 
-          // Bind restore actions
-          const restoreBtns = document.querySelectorAll('.btn-restore');
-          restoreBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-              const url = btn.getAttribute('data-url');
-              const name = btn.getAttribute('data-name');
-              openRestoreModal(url || '', name || '');
+              return `
+                <tr>
+                  <td style="padding: 0.75rem 1rem;">
+                    <div style="font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 14px; height: 14px; color: var(--primary);"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      ${displayDate}
+                    </div>
+                    <div style="font-family: monospace; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
+                      backups/${b.name}
+                    </div>
+                  </td>
+                  <td class="whitespace-nowrap text-secondary" style="font-weight: 500;">${sizeKb} KB</td>
+                  <td class="whitespace-nowrap" style="text-align: right; padding-right: 1.5rem;">
+                    <button class="btn-small-secondary btn-restore" data-url="${b.downloadUrl}" data-name="${b.name}" style="display: inline-flex; align-items: center; gap: 0.35rem;">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 12px; height: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" /></svg>
+                      ${lang === 'vi' ? 'Khôi phục' : 'Restore'}
+                    </button>
+                  </td>
+                </tr>
+              `;
+            }).join('');
+
+            const restoreBtns = document.querySelectorAll('.btn-restore');
+            restoreBtns.forEach(btn => {
+              btn.addEventListener('click', () => {
+                const url = btn.getAttribute('data-url');
+                const name = btn.getAttribute('data-name');
+                openRestoreModal(url || '', name || '');
+              });
             });
-          });
+          }
+        } else {
+          backupListBody.innerHTML = `
+            <tr>
+              <td colspan="3" class="text-center text-secondary" style="padding: 1.5rem; color: #ef4444;">
+                ⚠️ ${escapeHtml(data?.error || (lang === 'vi' ? 'Chưa cấu hình thông số kết nối GitHub Backup Repo.' : 'GitHub Backup API unconfigured.'))}
+              </td>
+            </tr>
+          `;
         }
-        if (backupListSection) backupListSection.style.display = 'block';
+      } catch (err) {
+        backupListBody.innerHTML = `
+          <tr>
+            <td colspan="3" class="text-center text-secondary" style="padding: 1.5rem; color: #ef4444;">
+              ⚠️ ${lang === 'vi' ? 'Lỗi nạp danh sách sao lưu:' : 'Failed to load backup list:'} ${escapeHtml(err.message)}
+            </td>
+          </tr>
+        `;
       }
-    } catch (err) {
-      console.error('Failed to load backup list', err);
     }
-  }
 
-  // GitHub connection test
-  const testGithubBtn = document.getElementById('testGithubBtn');
-  const testGitSpinner = document.getElementById('testGitSpinner');
-  if (testGithubBtn) {
-    testGithubBtn.addEventListener('click', async () => {
-      testGithubBtn.disabled = true;
-      if (testGitSpinner) testGitSpinner.style.display = 'inline-block';
+    // GitHub connection test
+    const testGithubBtn = document.getElementById('testGithubBtn');
+    const testGitSpinner = document.getElementById('testGitSpinner');
+    if (testGithubBtn) {
+      testGithubBtn.addEventListener('click', async () => {
+        testGithubBtn.disabled = true;
+        if (testGitSpinner) testGitSpinner.style.display = 'inline-block';
 
-      try {
-        const res = await fetch('/api/backup/test-connection', { method: 'POST' });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          showToast(i18n.githubTestSuccess || 'GitHub connection working!', 'success');
-          loadBackupList(); // Reload backup list on successful connection
-        } else {
-          showToast(data.error || 'Connection failed', 'error');
+        try {
+          const res = await fetch('/api/backup/test-connection', { method: 'POST' });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            showToast(i18n.githubTestSuccess || 'GitHub connection working!', 'success');
+            loadBackupList();
+          } else {
+            showToast(data.error || 'Connection failed', 'error');
+          }
+        } catch (err) {
+          showToast('Network error: ' + err.message, 'error');
+        } finally {
+          testGithubBtn.disabled = false;
+          if (testGitSpinner) testGitSpinner.style.display = 'none';
         }
-      } catch (err) {
-        showToast('Network error: ' + err.message, 'error');
-      } finally {
-        testGithubBtn.disabled = false;
-        if (testGitSpinner) testGitSpinner.style.display = 'none';
-      }
-    });
-  }
+      });
+    }
 
-  // GitHub backup trigger
-  const triggerBackupBtn = document.getElementById('triggerBackupBtn');
-  const backupSpinner = document.getElementById('backupSpinner');
-  if (triggerBackupBtn) {
-    triggerBackupBtn.addEventListener('click', async () => {
-      if (!confirm(i18n.githubBackupConfirm || 'Are you sure you want to trigger GitHub backup now?')) return;
-      triggerBackupBtn.disabled = true;
-      if (backupSpinner) backupSpinner.style.display = 'inline-block';
+    // GitHub backup trigger
+    const triggerBackupBtn = document.getElementById('triggerBackupBtn');
+    const backupSpinner = document.getElementById('backupSpinner');
+    if (triggerBackupBtn) {
+      triggerBackupBtn.addEventListener('click', async () => {
+        if (!confirm(i18n.githubBackupConfirm || 'Are you sure you want to trigger GitHub backup now?')) return;
+        triggerBackupBtn.disabled = true;
+        if (backupSpinner) backupSpinner.style.display = 'inline-block';
 
-      try {
-        const res = await fetch('/api/backup', { method: 'POST' });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          showToast(i18n.githubBackupSuccess || 'Backup successfully completed!', 'success');
-          loadBackupList(); // Reload backup list
-        } else {
-          showToast(data.error || 'Backup failed', 'error');
+        try {
+          const res = await fetch('/api/backup', { method: 'POST' });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            showToast(i18n.githubBackupSuccess || 'Backup successfully completed!', 'success');
+            loadBackupList();
+          } else {
+            showToast(data.error || 'Backup failed', 'error');
+          }
+        } catch (err) {
+          showToast('Network error: ' + err.message, 'error');
+        } finally {
+          triggerBackupBtn.disabled = false;
+          if (backupSpinner) backupSpinner.style.display = 'none';
         }
-      } catch (err) {
-        showToast('Network error: ' + err.message, 'error');
-      } finally {
-        triggerBackupBtn.disabled = false;
-        if (backupSpinner) backupSpinner.style.display = 'none';
-      }
-    });
-  }
+      });
+    }
 
-  // Restore Modal Logic
-  const restoreModal = document.getElementById('restoreConfirmModal');
-  const closeRestoreModalBtn = document.getElementById('closeRestoreModalBtn');
-  const cancelRestoreBtn = document.getElementById('cancelRestoreBtn');
-  const confirmRestoreBtn = document.getElementById('confirmRestoreBtn');
-  const restoreSpinner = document.getElementById('restoreSpinner');
-  const filenameDisplay = document.getElementById('restoreFilenameDisplay');
+    // Restore Modal Logic
+    const restoreModal = document.getElementById('restoreConfirmModal');
+    const closeRestoreModalBtn = document.getElementById('closeRestoreModalBtn');
+    const cancelRestoreBtn = document.getElementById('cancelRestoreBtn');
+    const confirmRestoreBtn = document.getElementById('confirmRestoreBtn');
+    const restoreSpinner = document.getElementById('restoreSpinner');
+    const filenameDisplay = document.getElementById('restoreFilenameDisplay');
 
-  let currentRestoreUrl = '';
-  let currentRestoreFilename = '';
+    let currentRestoreUrl = '';
+    let currentRestoreFilename = '';
 
-  function openRestoreModal(url, filename) {
-    currentRestoreUrl = url;
-    currentRestoreFilename = filename;
-    if (filenameDisplay) filenameDisplay.textContent = filename;
-    if (restoreModal) restoreModal.classList.add('open');
-  }
+    function openRestoreModal(url, filename) {
+      currentRestoreUrl = url;
+      currentRestoreFilename = filename;
+      if (filenameDisplay) filenameDisplay.textContent = filename;
+      if (restoreModal) restoreModal.classList.add('open');
+    }
 
-  function closeRestoreModal() {
-    if (restoreModal) restoreModal.classList.remove('open');
-    currentRestoreUrl = '';
-    currentRestoreFilename = '';
-  }
+    function closeRestoreModal() {
+      if (restoreModal) restoreModal.classList.remove('open');
+      currentRestoreUrl = '';
+      currentRestoreFilename = '';
+    }
 
-  if (closeRestoreModalBtn) closeRestoreModalBtn.addEventListener('click', closeRestoreModal);
-  if (cancelRestoreBtn) cancelRestoreBtn.addEventListener('click', closeRestoreModal);
+    if (closeRestoreModalBtn) closeRestoreModalBtn.addEventListener('click', closeRestoreModal);
+    if (cancelRestoreBtn) cancelRestoreBtn.addEventListener('click', closeRestoreModal);
 
-  if (confirmRestoreBtn) {
-    confirmRestoreBtn.addEventListener('click', async () => {
-      confirmRestoreBtn.disabled = true;
-      if (restoreSpinner) restoreSpinner.style.display = 'inline-block';
+    if (confirmRestoreBtn) {
+      confirmRestoreBtn.addEventListener('click', async () => {
+        confirmRestoreBtn.disabled = true;
+        if (restoreSpinner) restoreSpinner.style.display = 'inline-block';
 
-      try {
-        const res = await fetch('/api/backup/restore', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ downloadUrl: currentRestoreUrl, filename: currentRestoreFilename })
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          showToast(lang === 'vi' ? 'Khôi phục dữ liệu thành công!' : 'Database successfully restored!', 'success');
-          closeRestoreModal();
-          setTimeout(() => window.location.reload(), 1500);
-        } else {
-          showToast(data.error || 'Restore failed', 'error');
+        try {
+          const res = await fetch('/api/backup/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ downloadUrl: currentRestoreUrl, filename: currentRestoreFilename })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            showToast(lang === 'vi' ? 'Khôi phục dữ liệu thành công!' : 'Database successfully restored!', 'success');
+            closeRestoreModal();
+            setTimeout(() => window.location.reload(), 1500);
+          } else {
+            showToast(data.error || 'Restore failed', 'error');
+            confirmRestoreBtn.disabled = false;
+            if (restoreSpinner) restoreSpinner.style.display = 'none';
+          }
+        } catch (err) {
+          showToast('Network error: ' + err.message, 'error');
           confirmRestoreBtn.disabled = false;
           if (restoreSpinner) restoreSpinner.style.display = 'none';
         }
-      } catch (err) {
-        showToast('Network error: ' + err.message, 'error');
-        confirmRestoreBtn.disabled = false;
-        if (restoreSpinner) restoreSpinner.style.display = 'none';
+      });
+    }
+
+    // Listen to tab activation event
+    window.addEventListener('settings-tab-changed', (e) => {
+      if (e.detail?.hash === '#backup') {
+        loadBackupList();
       }
     });
+
+    // Initial load on script execution
+    loadBackupList();
   }
 
-  // Initial load
-  loadBackupList();
-
-  // Initial load
-  loadBackupList();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBackupSettings);
+  } else {
+    initBackupSettings();
+  }
 </script>

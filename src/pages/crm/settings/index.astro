@@ -947,6 +947,9 @@ const i18nData = {
         panel.classList.remove('active');
       }
     });
+
+    // Notify subcomponents of active tab change
+    window.dispatchEvent(new CustomEvent('settings-tab-changed', { detail: { hash: targetHash } }));
   }
 
   // Click listener for nav items

@@ -110,8 +110,9 @@ const nonce = Astro.locals.nonce;
 )}
 
 <script is:inline nonce={nonce}>
-  const layout = document.querySelector('.settings-layout');
-  const isAdmin = layout?.getAttribute('data-is-admin') === 'true';
+  function initSecuritySettings() {
+    const layout = document.querySelector('.settings-layout');
+    const isAdmin = layout?.getAttribute('data-is-admin') === 'true';
   const i18n = JSON.parse(layout?.getAttribute('data-i18n') || '{}');
 
   function showToast(message, type = 'success') {
@@ -273,5 +274,19 @@ const nonce = Astro.locals.nonce;
         }
       });
     }
+
+    // Listen to tab activation event
+    window.addEventListener('settings-tab-changed', (e) => {
+      if (e.detail?.hash === '#security') {
+        loadUsers();
+      }
+    });
+  }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSecuritySettings);
+  } else {
+    initSecuritySettings();
   }
 </script>

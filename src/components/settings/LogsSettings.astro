@@ -128,8 +128,9 @@ const nonce = Astro.locals.nonce;
 )}
 
 <script is:inline nonce={nonce}>
-  const layout = document.querySelector('.settings-layout');
-  const isAdmin = layout?.getAttribute('data-is-admin') === 'true';
+  function initLogsSettings() {
+    const layout = document.querySelector('.settings-layout');
+    const isAdmin = layout?.getAttribute('data-is-admin') === 'true';
 
   function escapeHtml(unsafe) {
     if (unsafe === null || unsafe === undefined) return '';
@@ -396,5 +397,23 @@ const nonce = Astro.locals.nonce;
     } else {
       loadAuditLogs();
     }
+
+    // Listen to tab activation event
+    window.addEventListener('settings-tab-changed', (e) => {
+      if (e.detail?.hash === '#logs') {
+        const activeBtn = document.querySelector('.sub-tab-btn.active');
+        const tabType = activeBtn ? activeBtn.getAttribute('data-tab') : 'audit';
+        if (tabType === 'sync') loadSyncLogs();
+        else if (tabType === 'debug') loadDebugLogs();
+        else loadAuditLogs();
+      }
+    });
+  }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLogsSettings);
+  } else {
+    initLogsSettings();
   }
 </script>

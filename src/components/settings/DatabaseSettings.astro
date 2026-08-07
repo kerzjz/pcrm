@@ -700,9 +700,10 @@ const getTableIcon = (tableName: string) => {
 </style>
 
 <script is:inline nonce={nonce}>
-  const layout = document.querySelector('.settings-layout');
-  const i18n = JSON.parse(layout?.getAttribute('data-i18n') || '{}');
-  const lang = layout?.getAttribute('data-lang') || 'vi';
+  function initDatabaseSettings() {
+    const layout = document.querySelector('.settings-layout');
+    const i18n = JSON.parse(layout?.getAttribute('data-i18n') || '{}');
+    const lang = layout?.getAttribute('data-lang') || 'vi';
 
   function showToast(message, type = 'success') {
     const event = new CustomEvent('show-toast', { detail: { message, type } });
@@ -823,5 +824,12 @@ const getTableIcon = (tableName: string) => {
         if (clearSpinner) clearSpinner.style.display = 'none';
       }
     });
+  }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDatabaseSettings);
+  } else {
+    initDatabaseSettings();
   }
 </script>
