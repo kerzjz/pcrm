@@ -7,6 +7,8 @@ import { customers, config, services, orders } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { parseQrPrefixesConfig, formatCleanMemo } from '@/lib/qrHelper';
 
+const nonce = Astro.locals.nonce;
+
 // Fetch initial data from database
 const db = getDb(env);
 const allCustomers = await db.select().from(customers);
@@ -636,7 +638,7 @@ if (orderId) {
   </div>
 
   <!-- Client-side state & UI handling -->
-  <script is:inline define:vars={{ defaultBank, defaultAccount, orgName, initialOrder, lang }}>
+  <script is:inline nonce={nonce} define:vars={{ defaultBank, defaultAccount, orgName, initialOrder, lang }}>
     // Accent helper to translate Vietnamese accents
     function removeAccents(str) {
       return str

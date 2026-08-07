@@ -15,6 +15,7 @@ interface Props {
 }
 
 const { lang, isAdmin, envStatus } = Astro.props;
+const nonce = Astro.locals.nonce;
 
 const dirTree = `backup-repository/
 └── backups/
@@ -164,7 +165,7 @@ const jsonStructure = `{
   </div>
 </div>
 
-<script>
+<script nonce={nonce}>
   const layout = document.querySelector('.settings-layout') as HTMLDivElement;
   const i18n = JSON.parse(layout?.getAttribute('data-i18n') || '{}');
   const lang = (layout?.getAttribute('data-lang') || 'vi') as 'vi' | 'en';

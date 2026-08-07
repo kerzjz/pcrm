@@ -19,6 +19,7 @@ import {
 } from '@/lib/db/schema';
 
 // Subcomponents
+const nonce = Astro.locals.nonce;
 import GeneralSettings from '@/components/settings/GeneralSettings.astro';
 import SepaySettings from '@/components/settings/SepaySettings.astro';
 import DatabaseSettings from '@/components/settings/DatabaseSettings.astro';
@@ -901,7 +902,7 @@ const i18nData = {
 
 </style>
 
-<script>
+<script nonce={nonce}>
   // Toast Notification System
   const toast = document.getElementById('toastNotification') as HTMLDivElement;
   const toastText = document.getElementById('toastNotificationText') as HTMLSpanElement;

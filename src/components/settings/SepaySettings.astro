@@ -27,6 +27,7 @@ interface Props {
 
 const { lang, isAdmin, defaultBank, defaultAccount, serviceInvoiceContentTemplate, envStatus, sepaySyncLimit, sepaySyncDays, qrQuickPrefixes } = Astro.props;
 const parsedPrefixes = parseQrPrefixesConfig(qrQuickPrefixes);
+const nonce = Astro.locals.nonce;
 ---
 
 <section id="integrations" class="settings-card tab-panel">
@@ -113,7 +114,7 @@ const parsedPrefixes = parseQrPrefixesConfig(qrQuickPrefixes);
   </div>
 </section>
 
-<script>
+<script nonce={nonce}>
   const layout = document.querySelector('.settings-layout') as HTMLDivElement;
   const i18n = JSON.parse(layout?.getAttribute('data-i18n') || '{}');
 

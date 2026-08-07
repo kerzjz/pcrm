@@ -6,6 +6,8 @@ import { getDb } from '@/lib/db';
 import { users, syncLogs, customers, payments } from '@/lib/db/schema';
 import { desc, eq, sql } from 'drizzle-orm';
 
+const nonce = Astro.locals.nonce;
+
 // Initialize database client to query analytics metrics
 const db = getDb(env);
 
@@ -615,7 +617,7 @@ const yearlyRev = Number(revenueStats[0]?.yearlyRevenue || 0);
   </div>
 </DashboardLayout>
 
-<script>
+<script nonce={nonce}>
   function escapeHtml(unsafe: any): string {
     if (unsafe === null || unsafe === undefined) return '';
     return String(unsafe)
