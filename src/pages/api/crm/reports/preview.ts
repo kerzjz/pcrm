@@ -5,6 +5,7 @@ import { payments, customers, orders, services, config as configTable } from '@/
 import { eq, and, gte, lte, isNotNull } from 'drizzle-orm';
 import { env } from 'cloudflare:workers';
 import { getPaymentDescription } from '@/lib/reports/excelGenerator';
+import { safeErrorResponse } from '@/lib/error-handler';
 
 const DEFAULT_CONFIG = {
   orgName: 'HỘ KINH DOANH',
@@ -18,6 +19,7 @@ const DEFAULT_CONFIG = {
 };
 
 // @para-doc [tax-reporting-spec.md#52-api-xem-truoc-so-lieu-doanh-thu-s1a-hkd-get-apicrmreportspreview]
+// @para-doc [#csa-sec-error-suppression]
 export const GET = async (context: APIContext): Promise<Response> => {
   try {
     // 1. Verify user session and permissions
@@ -188,9 +190,6 @@ export const GET = async (context: APIContext): Promise<Response> => {
       }
     );
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: 'Internal Server Error', details: err.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return safeErrorResponse(err, 'Failed to generate report preview');
   }
 };

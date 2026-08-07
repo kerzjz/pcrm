@@ -4,7 +4,7 @@ import { env } from 'cloudflare:workers';
 import { getDb } from '@/lib/db';
 import { config as configTable } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { logAudit } from '@/lib/audit';
+import { logAudit } from '@/lib/audit';import { safeErrorResponse } from '@/lib/error-handler';
 
 const DEFAULT_CONFIG = {
   orgName: 'HỘ KINH DOANH',
@@ -19,6 +19,7 @@ const DEFAULT_CONFIG = {
 
 // @para-doc [api-contracts.md#4-api-luu-tru-cau-hinh-he-thong-system-configuration-api]
 // @para-doc [tax-reporting-spec.md#53-api-cau-hinh-bao-cao-doanh-thu-s1a-hkd-get-post-apicrmreportsconfig]
+// @para-doc [#csa-sec-error-suppression]
 export const GET = async (context: APIContext): Promise<Response> => {
   try {
     const user = context.locals.user;
@@ -53,15 +54,13 @@ export const GET = async (context: APIContext): Promise<Response> => {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: 'Internal Server Error', details: err.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return safeErrorResponse(err, 'Failed to load report config');
   }
 };
 
 // @para-doc [api-contracts.md#4-api-luu-tru-cau-hinh-he-thong-system-configuration-api]
 // @para-doc [tax-reporting-spec.md#53-api-cau-hinh-bao-cao-doanh-thu-s1a-hkd-get-post-apicrmreportsconfig]
+// @para-doc [#csa-sec-error-suppression]
 export const POST = async (context: APIContext): Promise<Response> => {
   try {
     const user = context.locals.user;
@@ -126,9 +125,6 @@ export const POST = async (context: APIContext): Promise<Response> => {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: 'Internal Server Error', details: err.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return safeErrorResponse(err, 'Failed to save report config');
   }
 };
