@@ -9,6 +9,7 @@ import { t } from '@/lib/i18n';
 
 const db = getDb(env);
 const lang = Astro.locals.lang || 'vi';
+const nonce = Astro.locals.nonce;
 const user = Astro.locals.user;
 const isAdmin = user?.role === 'admin';
 
@@ -1294,7 +1295,7 @@ function hasMatchingTrigger(txContent: string | null, rules: any[]): boolean {
   )}
 
   <!-- Client script for modal handling -->
-  <script is:inline define:vars={{ allOrders, classificationRules, lang, allServices, sepaySyncLimit }}>
+  <script is:inline nonce={nonce} define:vars={{ allOrders, classificationRules, lang, allServices, sepaySyncLimit }}>
     const modal = document.getElementById('reconcileModal');
     const closeBtn = document.getElementById('modalCloseBtn');
     const cancelBtn = document.getElementById('modalCancelBtn');

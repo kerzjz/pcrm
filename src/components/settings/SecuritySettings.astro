@@ -109,17 +109,17 @@ const nonce = Astro.locals.nonce;
   </div>
 )}
 
-<script nonce={nonce}>
-  const layout = document.querySelector('.settings-layout') as HTMLDivElement;
+<script is:inline nonce={nonce}>
+  const layout = document.querySelector('.settings-layout');
   const isAdmin = layout?.getAttribute('data-is-admin') === 'true';
   const i18n = JSON.parse(layout?.getAttribute('data-i18n') || '{}');
 
-  function showToast(message: string, type: 'success' | 'error' = 'success') {
+  function showToast(message, type = 'success') {
     const event = new CustomEvent('show-toast', { detail: { message, type } });
     window.dispatchEvent(event);
   }
 
-  function escapeHtml(unsafe: any) {
+  function escapeHtml(unsafe) {
     if (unsafe === null || unsafe === undefined) return '';
     return String(unsafe)
       .replace(/&/g, "&amp;")
@@ -130,22 +130,22 @@ const nonce = Astro.locals.nonce;
   }
 
   // Password change submit
-  const changePasswordForm = document.getElementById('changePasswordForm') as HTMLFormElement;
-  const pwdSpinner = document.getElementById('pwdSpinner') as HTMLSpanElement;
+  const changePasswordForm = document.getElementById('changePasswordForm');
+  const pwdSpinner = document.getElementById('pwdSpinner');
 
   if (changePasswordForm) {
     changePasswordForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const currentPassword = (document.getElementById('currentPassword') as HTMLInputElement).value;
-      const newPassword = (document.getElementById('newPassword') as HTMLInputElement).value;
-      const confirmPassword = (document.getElementById('confirmPassword') as HTMLInputElement).value;
+      const currentPassword = document.getElementById('currentPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
 
       if (newPassword !== confirmPassword) {
         showToast(i18n.pwdMismatch || 'Passwords do not match!', 'error');
         return;
       }
 
-      const submitBtn = document.getElementById('changePasswordBtn') as HTMLButtonElement;
+      const submitBtn = document.getElementById('changePasswordBtn');
       submitBtn.disabled = true;
       if (pwdSpinner) pwdSpinner.style.display = 'inline-block';
 
@@ -163,7 +163,7 @@ const nonce = Astro.locals.nonce;
         } else {
           showToast(data.error || 'Failed to change password', 'error');
         }
-      } catch (err: any) {
+      } catch (err) {
         showToast('Network error: ' + err.message, 'error');
       } finally {
         submitBtn.disabled = false;
@@ -174,13 +174,13 @@ const nonce = Astro.locals.nonce;
 
   // Admin User CRUD logic
   if (isAdmin) {
-    const userTableBody = document.getElementById('userTableBody') as HTMLTableSectionElement;
-    const addUserModal = document.getElementById('addUserModal') as HTMLDivElement;
-    const openAddUserModal = document.getElementById('openAddUserModal') as HTMLButtonElement;
-    const closeAddUserModal = document.getElementById('closeAddUserModal') as HTMLButtonElement;
-    const cancelAddUser = document.getElementById('cancelAddUser') as HTMLButtonElement;
-    const addUserForm = document.getElementById('addUserForm') as HTMLFormElement;
-    const createUserSpinner = document.getElementById('createUserSpinner') as HTMLSpanElement;
+    const userTableBody = document.getElementById('userTableBody');
+    const addUserModal = document.getElementById('addUserModal');
+    const openAddUserModal = document.getElementById('openAddUserModal');
+    const closeAddUserModal = document.getElementById('closeAddUserModal');
+    const cancelAddUser = document.getElementById('cancelAddUser');
+    const addUserForm = document.getElementById('addUserForm');
+    const createUserSpinner = document.getElementById('createUserSpinner');
 
     // Load users
     async function loadUsers() {
@@ -193,7 +193,7 @@ const nonce = Astro.locals.nonce;
         if (!res.ok) throw new Error('Failed to fetch users');
         const usersList = await res.json();
         
-        userTableBody.innerHTML = usersList.map((usr: any) => `
+        userTableBody.innerHTML = usersList.map((usr) => `
           <tr>
             <td><strong>${escapeHtml(usr.username)}</strong></td>
             <td><span class="badge-action">${escapeHtml(usr.role)}</span></td>
@@ -218,12 +218,12 @@ const nonce = Astro.locals.nonce;
               } else {
                 showToast(data.error || 'Failed to delete user', 'error');
               }
-            } catch (err: any) {
+            } catch (err) {
               showToast(err.message, 'error');
             }
           });
         });
-      } catch (err: any) {
+      } catch (err) {
         userTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-secondary">Error: ${escapeHtml(err.message)}</td></tr>`;
       }
     }
@@ -242,11 +242,11 @@ const nonce = Astro.locals.nonce;
     if (addUserForm) {
       addUserForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const username = (document.getElementById('newUsername') as HTMLInputElement).value;
-        const password = (document.getElementById('newUserPassword') as HTMLInputElement).value;
-        const role = (document.getElementById('newUserRole') as HTMLSelectElement).value;
+        const username = document.getElementById('newUsername').value;
+        const password = document.getElementById('newUserPassword').value;
+        const role = document.getElementById('newUserRole').value;
 
-        const submitBtn = addUserForm.querySelector('button[type="submit"]') as HTMLButtonElement;
+        const submitBtn = addUserForm.querySelector('button[type="submit"]');
         submitBtn.disabled = true;
         if (createUserSpinner) createUserSpinner.style.display = 'inline-block';
 
@@ -265,7 +265,7 @@ const nonce = Astro.locals.nonce;
           } else {
             showToast(data.error || 'Failed to create user', 'error');
           }
-        } catch (err: any) {
+        } catch (err) {
           showToast(err.message, 'error');
         } finally {
           submitBtn.disabled = false;

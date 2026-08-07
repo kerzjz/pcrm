@@ -8,6 +8,7 @@ import { desc, eq, like, and, or, sql } from 'drizzle-orm';
 import { autoAssignMainService } from '@/lib/services/serviceManager';
 
 const db = getDb(env);
+const nonce = Astro.locals.nonce;
 const user = Astro.locals.user;
 const isWritableBalance = user && (user.role === 'admin' || user.role === 'accountant');
 
@@ -1020,7 +1021,7 @@ function formatExpiration(timestamp: number | null) {
     </div>
   </div>
 
-  <script is:inline>
+  <script is:inline nonce={nonce}>
     // New Customer Modal
     const modal = document.getElementById('newCustomerModal');
     const openBtn = document.getElementById('btnNewCustomer');

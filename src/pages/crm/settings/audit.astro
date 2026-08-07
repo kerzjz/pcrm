@@ -4,6 +4,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 import { verifySessionCookie, getSessionSecret } from '@/lib/auth';
 
 const lang = Astro.locals.lang || 'vi';
+const nonce = Astro.locals.nonce;
 const title = lang === 'vi' ? 'Đối soát dữ liệu hệ thống' : 'System Data Reconciliation';
 
 // 1. Xác thực session và kiểm tra quyền admin/accountant ở server-side Astro
@@ -198,7 +199,7 @@ const isAdmin = user.role === 'admin';
   </div>
 
   <!-- Client-side script -->
-  <script is:inline define:vars={{ lang, isAdmin }}>
+  <script is:inline nonce={nonce} define:vars={{ lang, isAdmin }}>
     let auditData = null;
     let pendingAction = null;
     let pendingTargetIds = []; // support array for bulk actions

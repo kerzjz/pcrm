@@ -8,6 +8,7 @@ import { desc, eq, like, and, or, sql } from 'drizzle-orm';
 
 const db = getDb(env);
 const lang = Astro.locals.lang || 'vi';
+const nonce = Astro.locals.nonce;
 const user = Astro.locals.user;
 
 // Fetch list of customers and services for quick create order modal
@@ -1151,11 +1152,11 @@ function formatDateInput(timestamp: number | null) {
     </div>
   </div>
 
-  <script define:vars={{ lang }}>
+  <script is:inline nonce={nonce} define:vars={{ lang }}>
     window.CRM_LANG = lang;
   </script>
 
-  <script is:inline>
+  <script is:inline nonce={nonce}>
     // Quick Create Order Modal Logic
     const openBtn = document.getElementById('openQuickOrderModalBtn');
     const modal = document.getElementById('quickOrderModal');

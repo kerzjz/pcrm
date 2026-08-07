@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { removeAccents, generateQrMemo, calculateQrAmount, formatCleanMemo, parseQrPrefixesConfig, DEFAULT_QR_PREFIXES } from '@/lib/qrHelper';
+import { removeAccents, generateQrMemo, calculateQrAmount, formatCleanMemo, parseQrPrefixesConfig } from '@/lib/qrHelper';
 
 describe('QR Helper Logic (TDD)', () => {
   describe('removeAccents', () => {

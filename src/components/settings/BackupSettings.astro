@@ -165,12 +165,12 @@ const jsonStructure = `{
   </div>
 </div>
 
-<script nonce={nonce}>
-  const layout = document.querySelector('.settings-layout') as HTMLDivElement;
+<script is:inline nonce={nonce}>
+  const layout = document.querySelector('.settings-layout');
   const i18n = JSON.parse(layout?.getAttribute('data-i18n') || '{}');
-  const lang = (layout?.getAttribute('data-lang') || 'vi') as 'vi' | 'en';
+  const lang = layout?.getAttribute('data-lang') || 'vi';
 
-  function showToast(message: string, type: 'success' | 'error' = 'success') {
+  function showToast(message, type = 'success') {
     const event = new CustomEvent('show-toast', { detail: { message, type } });
     window.dispatchEvent(event);
   }
@@ -193,7 +193,7 @@ const jsonStructure = `{
             </tr>
           `;
         } else {
-          backupListBody.innerHTML = backups.map((b: any) => {
+          backupListBody.innerHTML = backups.map((b) => {
             const sizeKb = (b.size / 1024).toFixed(1);
             
             // Parse date from file name: backup-YYYY-MM-DDTHH-mm-ss-SSSZ.json
@@ -254,8 +254,8 @@ const jsonStructure = `{
   }
 
   // GitHub connection test
-  const testGithubBtn = document.getElementById('testGithubBtn') as HTMLButtonElement;
-  const testGitSpinner = document.getElementById('testGitSpinner') as HTMLSpanElement;
+  const testGithubBtn = document.getElementById('testGithubBtn');
+  const testGitSpinner = document.getElementById('testGitSpinner');
   if (testGithubBtn) {
     testGithubBtn.addEventListener('click', async () => {
       testGithubBtn.disabled = true;
@@ -270,7 +270,7 @@ const jsonStructure = `{
         } else {
           showToast(data.error || 'Connection failed', 'error');
         }
-      } catch (err: any) {
+      } catch (err) {
         showToast('Network error: ' + err.message, 'error');
       } finally {
         testGithubBtn.disabled = false;
@@ -280,8 +280,8 @@ const jsonStructure = `{
   }
 
   // GitHub backup trigger
-  const triggerBackupBtn = document.getElementById('triggerBackupBtn') as HTMLButtonElement;
-  const backupSpinner = document.getElementById('backupSpinner') as HTMLSpanElement;
+  const triggerBackupBtn = document.getElementById('triggerBackupBtn');
+  const backupSpinner = document.getElementById('backupSpinner');
   if (triggerBackupBtn) {
     triggerBackupBtn.addEventListener('click', async () => {
       if (!confirm(i18n.githubBackupConfirm || 'Are you sure you want to trigger GitHub backup now?')) return;
@@ -297,7 +297,7 @@ const jsonStructure = `{
         } else {
           showToast(data.error || 'Backup failed', 'error');
         }
-      } catch (err: any) {
+      } catch (err) {
         showToast('Network error: ' + err.message, 'error');
       } finally {
         triggerBackupBtn.disabled = false;
@@ -310,14 +310,14 @@ const jsonStructure = `{
   const restoreModal = document.getElementById('restoreConfirmModal');
   const closeRestoreModalBtn = document.getElementById('closeRestoreModalBtn');
   const cancelRestoreBtn = document.getElementById('cancelRestoreBtn');
-  const confirmRestoreBtn = document.getElementById('confirmRestoreBtn') as HTMLButtonElement;
-  const restoreSpinner = document.getElementById('restoreSpinner') as HTMLSpanElement;
+  const confirmRestoreBtn = document.getElementById('confirmRestoreBtn');
+  const restoreSpinner = document.getElementById('restoreSpinner');
   const filenameDisplay = document.getElementById('restoreFilenameDisplay');
 
   let currentRestoreUrl = '';
   let currentRestoreFilename = '';
 
-  function openRestoreModal(url: string, filename: string) {
+  function openRestoreModal(url, filename) {
     currentRestoreUrl = url;
     currentRestoreFilename = filename;
     if (filenameDisplay) filenameDisplay.textContent = filename;
@@ -354,13 +354,16 @@ const jsonStructure = `{
           confirmRestoreBtn.disabled = false;
           if (restoreSpinner) restoreSpinner.style.display = 'none';
         }
-      } catch (err: any) {
+      } catch (err) {
         showToast('Network error: ' + err.message, 'error');
         confirmRestoreBtn.disabled = false;
         if (restoreSpinner) restoreSpinner.style.display = 'none';
       }
     });
   }
+
+  // Initial load
+  loadBackupList();
 
   // Initial load
   loadBackupList();

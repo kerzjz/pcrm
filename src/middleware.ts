@@ -1,6 +1,5 @@
 // @para-doc [#csa-auth-cookie]
 import type { APIContext, MiddlewareNext } from 'astro';
-import { env } from 'cloudflare:workers';
 import { verifySessionCookie, getSessionSecret } from './lib/auth';
 import { validateOrigin } from './lib/csrf';
 

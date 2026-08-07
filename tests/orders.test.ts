@@ -466,13 +466,13 @@ describe('Quick Create Paid Order API Endpoint Integration Tests', () => {
 
 describe('DELETE: Delete Paid Order API Endpoint Integration Tests', () => {
   const SESSION_SECRET = 'fallback-secret-key-must-be-at-least-32-chars-long';
-  let adminToken: string;
+  let _adminToken: string;
   let staffToken: string;
   let salerToken: string;
 
   beforeAll(async () => {
     process.env.SESSION_SECRET = SESSION_SECRET;
-    adminToken = await createSessionCookie({
+    _adminToken = await createSessionCookie({
       id: 'usr-admin-ord',
       username: 'adminord',
       role: 'admin',
@@ -628,13 +628,13 @@ describe('DELETE: Delete Paid Order API Endpoint Integration Tests', () => {
 
 describe('PUT: Update Paid Order API Endpoint Integration Tests', () => {
   const SESSION_SECRET = 'fallback-secret-key-must-be-at-least-32-chars-long';
-  let adminToken: string;
+  let _adminToken: string;
   let staffToken: string;
   let salerToken: string;
 
   beforeAll(async () => {
     process.env.SESSION_SECRET = SESSION_SECRET;
-    adminToken = await createSessionCookie({
+    _adminToken = await createSessionCookie({
       id: 'usr-admin-ord',
       username: 'adminord',
       role: 'admin',

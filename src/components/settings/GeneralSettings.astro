@@ -58,9 +58,9 @@ const nonce = Astro.locals.nonce;
   </div>
 </section>
 
-<script nonce={nonce}>
+<script is:inline nonce={nonce}>
   // Language selection logic
-  const layout = document.querySelector('.settings-layout') as HTMLDivElement;
+  const layout = document.querySelector('.settings-layout');
   const lang = layout?.getAttribute('data-lang') || 'vi';
   const i18n = JSON.parse(layout?.getAttribute('data-i18n') || '{}');
 
@@ -75,11 +75,11 @@ const nonce = Astro.locals.nonce;
   });
 
   // Save General settings submit
-  const saveGeneralBtn = document.getElementById('saveGeneralBtn') as HTMLButtonElement;
-  const genSpinner = document.getElementById('genSpinner') as HTMLSpanElement;
+  const saveGeneralBtn = document.getElementById('saveGeneralBtn');
+  const genSpinner = document.getElementById('genSpinner');
 
   // Helper to show toast (communicates with window event or parent toast system)
-  function showToast(message: string, type: 'success' | 'error' = 'success') {
+  function showToast(message, type = 'success') {
     const event = new CustomEvent('show-toast', { detail: { message, type } });
     window.dispatchEvent(event);
   }
@@ -101,8 +101,8 @@ const nonce = Astro.locals.nonce;
         }
 
         // 2. Org Info updates
-        const orgNameVal = (document.getElementById('orgNameInput') as HTMLInputElement).value;
-        const orgLogoVal = (document.getElementById('orgLogoInput') as HTMLInputElement).value;
+        const orgNameVal = document.getElementById('orgNameInput').value;
+        const orgLogoVal = document.getElementById('orgLogoInput').value;
 
         // Save orgName
         const orgNameRes = await fetch('/api/crm/config', {
@@ -135,7 +135,7 @@ const nonce = Astro.locals.nonce;
         showToast(i18n.saveGeneralSuccess || 'General settings saved successfully!', 'success');
         setTimeout(() => window.location.reload(), 1200);
 
-      } catch (err: any) {
+      } catch (err) {
         console.error(err);
         showToast(err.message, 'error');
         saveGeneralBtn.disabled = false;

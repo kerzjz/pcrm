@@ -9,7 +9,7 @@ class MockKV {
     return this.store.get(key) || null;
   }
 
-  async put(key: string, value: string, options?: any): Promise<void> {
+  async put(key: string, value: string, _options?: any): Promise<void> {
     this.store.set(key, value);
   }
 }

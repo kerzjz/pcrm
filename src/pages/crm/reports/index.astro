@@ -25,6 +25,7 @@ if (user.role !== 'admin' && user.role !== 'accountant') {
 }
 
 const lang = Astro.locals.lang || 'vi';
+const nonce = Astro.locals.nonce;
 
 // Load reports config
 const db = getDb(env);
@@ -53,9 +54,10 @@ if (existingConfig.length > 0) {
 // Generate years for filter (current year, previous year, next year)
 const currentYear = new Date().getFullYear();
 const filterYears = [currentYear - 1, currentYear, currentYear + 1];
+const title = lang === 'vi' ? 'Báo cáo doanh thu & tăng trưởng' : 'Revenue & Growth Reports';
 ---
 
-<DashboardLayout title={lang === 'vi' ? 'Báo cáo doanh thu' : 'Revenue Reports'}>
+<DashboardLayout title={title}>
   <style>
     .reports-container {
       display: flex;
@@ -738,7 +740,7 @@ const filterYears = [currentYear - 1, currentYear, currentYear + 1];
   <div id="reportsToast" class="toast" role="alert" aria-live="assertive"></div>
 
   <!-- Client-side logic script -->
-  <script is:inline define:vars={{ lang }}>
+  <script is:inline nonce={nonce} define:vars={{ lang }}>
     // Helper to escape HTML to prevent XSS
     function escapeHtml(unsafe) {
       if (unsafe === null || unsafe === undefined) return '';

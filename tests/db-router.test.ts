@@ -81,7 +81,7 @@ describe('runTransaction retry logic with mocking', () => {
       })
     };
 
-    const mockCallback = vi.fn(async (tx) => {
+    const mockCallback = vi.fn(async (_tx) => {
       return { result: 'success' };
     });
 

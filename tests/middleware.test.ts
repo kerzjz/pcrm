@@ -308,7 +308,7 @@ describe('Astro Middleware - Authentication & RBAC', () => {
 
       const nextResponse = new Response('ok');
       const nextCalled = vi.fn().mockResolvedValue(nextResponse);
-      const response = await onRequest(mockContext, nextCalled);
+      await onRequest(mockContext, nextCalled);
 
       // Webhook handler is allowed, will continue next
       expect(nextCalled).toHaveBeenCalled();

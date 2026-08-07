@@ -1,5 +1,5 @@
 // @para-doc [#csa-sec-turnstile]
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { verifyTurnstile } from '../src/lib/turnstile';
 
 describe('Cloudflare Turnstile Verification Utility (S3.12)', () => {

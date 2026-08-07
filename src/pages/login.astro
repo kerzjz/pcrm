@@ -30,7 +30,7 @@ const nonce = Astro.locals.nonce;
     <title>Sign In | Pageel CRM</title>
     <meta name="description" content="Access the premium Pageel CRM platform" />
     {turnstileSiteKey && (
-      <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+      <script is:inline nonce={nonce} src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     )}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -244,7 +244,7 @@ const nonce = Astro.locals.nonce;
       </div>
     </div>
 
-    <script nonce={nonce}>
+    <script is:inline nonce={nonce}>
       const form = document.getElementById('loginForm');
       const submitBtn = document.getElementById('submitBtn');
       const btnSpinner = document.getElementById('btnSpinner');

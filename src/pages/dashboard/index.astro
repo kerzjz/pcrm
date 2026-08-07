@@ -617,8 +617,8 @@ const yearlyRev = Number(revenueStats[0]?.yearlyRevenue || 0);
   </div>
 </DashboardLayout>
 
-<script nonce={nonce}>
-  function escapeHtml(unsafe: any): string {
+<script is:inline nonce={nonce}>
+  function escapeHtml(unsafe) {
     if (unsafe === null || unsafe === undefined) return '';
     return String(unsafe)
       .replace(/&/g, "&amp;")
@@ -629,13 +629,13 @@ const yearlyRev = Number(revenueStats[0]?.yearlyRevenue || 0);
   }
 
   // Handle toggle export inputs based on selection type
-  const exportType = document.getElementById('export-type') as HTMLSelectElement;
+  const exportType = document.getElementById('export-type');
   const groupMonth = document.getElementById('group-month');
   const groupQuarter = document.getElementById('group-quarter');
 
   if (exportType && groupMonth && groupQuarter) {
     exportType.addEventListener('change', (e) => {
-      const val = (e.target as HTMLSelectElement).value;
+      const val = e.target.value;
       if (val === 'month') {
         groupMonth.style.display = 'flex';
         groupQuarter.style.display = 'none';
@@ -650,19 +650,19 @@ const yearlyRev = Number(revenueStats[0]?.yearlyRevenue || 0);
   }
 
   // Handle export form submission
-  const exportForm = document.getElementById('export-form') as HTMLFormElement;
+  const exportForm = document.getElementById('export-form');
   if (exportForm) {
     exportForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const year = (document.getElementById('export-year') as HTMLInputElement).value;
-      const type = (document.getElementById('export-type') as HTMLSelectElement).value;
+      const year = document.getElementById('export-year').value;
+      const type = document.getElementById('export-type').value;
       
       let url = `/api/export/s1a?year=${year}`;
       if (type === 'month') {
-        const month = (document.getElementById('export-month') as HTMLSelectElement).value;
+        const month = document.getElementById('export-month').value;
         url += `&month=${month}`;
       } else if (type === 'quarter') {
-        const quarter = (document.getElementById('export-quarter') as HTMLSelectElement).value;
+        const quarter = document.getElementById('export-quarter').value;
         url += `&quarter=${quarter}`;
       }
 
@@ -679,15 +679,15 @@ const yearlyRev = Number(revenueStats[0]?.yearlyRevenue || 0);
 
   if (btnPreview && previewSection && previewSummary && previewTableBody) {
     btnPreview.addEventListener('click', async () => {
-      const year = (document.getElementById('export-year') as HTMLInputElement).value;
-      const type = (document.getElementById('export-type') as HTMLSelectElement).value;
+      const year = document.getElementById('export-year').value;
+      const type = document.getElementById('export-type').value;
       
       let url = `/api/export/s1a-preview?year=${year}`;
       if (type === 'month') {
-        const month = (document.getElementById('export-month') as HTMLSelectElement).value;
+        const month = document.getElementById('export-month').value;
         url += `&month=${month}`;
       } else if (type === 'quarter') {
-        const quarter = (document.getElementById('export-quarter') as HTMLSelectElement).value;
+        const quarter = document.getElementById('export-quarter').value;
         url += `&quarter=${quarter}`;
       }
 
@@ -710,7 +710,7 @@ const yearlyRev = Number(revenueStats[0]?.yearlyRevenue || 0);
               </tr>
             `;
           } else {
-            previewTableBody.innerHTML = data.payments.map((p: any) => {
+            previewTableBody.innerHTML = data.payments.map((p) => {
               const dateStr = new Date(p.paidAt).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
               const customerName = p.customer ? p.customer.fullName : 'Chưa gán';
               const customerId = p.customer ? p.customer.id : 'N/A';
@@ -729,7 +729,7 @@ const yearlyRev = Number(revenueStats[0]?.yearlyRevenue || 0);
         } else {
           throw new Error(data.error || 'Lỗi không xác định.');
         }
-      } catch (err: any) {
+      } catch (err) {
         alert(`Lỗi xem trước: ${err.message}`);
       } finally {
         btnPreview.removeAttribute('disabled');
@@ -763,7 +763,7 @@ const yearlyRev = Number(revenueStats[0]?.yearlyRevenue || 0);
         } else {
           throw new Error(data.error || 'Connection check failed');
         }
-      } catch (err: any) {
+      } catch (err) {
         alert(`Lỗi kiểm tra kết nối: ${err.message}`);
       } finally {
         btnTestConnection.removeAttribute('disabled');
@@ -806,7 +806,7 @@ const yearlyRev = Number(revenueStats[0]?.yearlyRevenue || 0);
         } else {
           throw new Error(data.error || 'Backup failed');
         }
-      } catch (err: any) {
+      } catch (err) {
         if (statusText) {
           statusText.textContent = 'Thất bại';
           statusText.className = 'text-danger';

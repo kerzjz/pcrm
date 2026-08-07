@@ -127,11 +127,11 @@ const nonce = Astro.locals.nonce;
   </section>
 )}
 
-<script nonce={nonce}>
-  const layout = document.querySelector('.settings-layout') as HTMLDivElement;
+<script is:inline nonce={nonce}>
+  const layout = document.querySelector('.settings-layout');
   const isAdmin = layout?.getAttribute('data-is-admin') === 'true';
 
-  function escapeHtml(unsafe: any) {
+  function escapeHtml(unsafe) {
     if (unsafe === null || unsafe === undefined) return '';
     return String(unsafe)
       .replace(/&/g, "&amp;")
@@ -168,12 +168,12 @@ const nonce = Astro.locals.nonce;
     const limit = 10;
 
     // Elements
-    const auditLogsBody = document.getElementById('auditLogsBody') as HTMLTableSectionElement;
-    const debugLogsBody = document.getElementById('debugLogsBody') as HTMLTableSectionElement;
-    const syncLogsBody = document.getElementById('syncLogsBody') as HTMLTableSectionElement;
+    const auditLogsBody = document.getElementById('auditLogsBody');
+    const debugLogsBody = document.getElementById('debugLogsBody');
+    const syncLogsBody = document.getElementById('syncLogsBody');
 
     async function loadAuditLogs() {
-      const actionInput = document.getElementById('auditActionFilter') as HTMLInputElement;
+      const actionInput = document.getElementById('auditActionFilter');
       const action = actionInput ? actionInput.value : '';
       try {
         auditLogsBody.innerHTML = `<tr><td colspan="5" class="text-center">Loading audit logs...</td></tr>`;
@@ -189,7 +189,7 @@ const nonce = Astro.locals.nonce;
         if (data.logs.length === 0) {
           auditLogsBody.innerHTML = `<tr><td colspan="5" class="text-center">No logs matching filter</td></tr>`;
         } else {
-          auditLogsBody.innerHTML = data.logs.map((log: any) => `
+          auditLogsBody.innerHTML = data.logs.map((log) => `
             <tr>
               <td class="whitespace-nowrap">${escapeHtml(new Date(log.createdAt).toLocaleString())}</td>
               <td>${escapeHtml(log.username) || 'System'}</td>
@@ -204,22 +204,22 @@ const nonce = Astro.locals.nonce;
 
         // Pager buttons state
         const totalPages = Math.ceil(data.total / limit) || 1;
-        const pageInfo = document.getElementById('auditPageInfo') as HTMLSpanElement;
+        const pageInfo = document.getElementById('auditPageInfo');
         if (pageInfo) pageInfo.textContent = `Page ${auditPage} of ${totalPages}`;
         
-        const prevBtn = document.getElementById('prevAuditPage') as HTMLButtonElement;
+        const prevBtn = document.getElementById('prevAuditPage');
         if (prevBtn) prevBtn.disabled = auditPage <= 1;
         
-        const nextBtn = document.getElementById('nextAuditPage') as HTMLButtonElement;
+        const nextBtn = document.getElementById('nextAuditPage');
         if (nextBtn) nextBtn.disabled = auditPage >= totalPages;
 
-      } catch (err: any) {
+      } catch (err) {
         auditLogsBody.innerHTML = `<tr><td colspan="5" class="text-center text-secondary">Error: ${escapeHtml(err.message)}</td></tr>`;
       }
     }
 
     async function loadDebugLogs() {
-      const levelSelect = document.getElementById('debugLevelFilter') as HTMLSelectElement;
+      const levelSelect = document.getElementById('debugLevelFilter');
       const level = levelSelect ? levelSelect.value : '';
       try {
         debugLogsBody.innerHTML = `<tr><td colspan="5" class="text-center">Loading debug logs...</td></tr>`;
@@ -235,7 +235,7 @@ const nonce = Astro.locals.nonce;
         if (data.logs.length === 0) {
           debugLogsBody.innerHTML = `<tr><td colspan="5" class="text-center">No logs matching filter</td></tr>`;
         } else {
-          debugLogsBody.innerHTML = data.logs.map((log: any) => `
+          debugLogsBody.innerHTML = data.logs.map((log) => `
             <tr class="debug-row-main" style="cursor: pointer;">
               <td class="whitespace-nowrap">${escapeHtml(new Date(log.createdAt).toLocaleString())}</td>
               <td><span class="badge-action ${escapeHtml(log.level)}">${escapeHtml(log.level)}</span></td>
@@ -257,7 +257,7 @@ const nonce = Astro.locals.nonce;
           const mainRows = document.querySelectorAll('.debug-row-main');
           mainRows.forEach((row) => {
             row.addEventListener('click', () => {
-              const detailRow = row.nextElementSibling as HTMLTableRowElement;
+              const detailRow = row.nextElementSibling;
               if (detailRow) {
                 detailRow.style.display = detailRow.style.display === 'none' ? 'table-row' : 'none';
               }
@@ -266,22 +266,22 @@ const nonce = Astro.locals.nonce;
         }
 
         const totalPages = Math.ceil(data.total / limit) || 1;
-        const pageInfo = document.getElementById('debugPageInfo') as HTMLSpanElement;
+        const pageInfo = document.getElementById('debugPageInfo');
         if (pageInfo) pageInfo.textContent = `Page ${debugPage} of ${totalPages}`;
         
-        const prevBtn = document.getElementById('prevDebugPage') as HTMLButtonElement;
+        const prevBtn = document.getElementById('prevDebugPage');
         if (prevBtn) prevBtn.disabled = debugPage <= 1;
         
-        const nextBtn = document.getElementById('nextDebugPage') as HTMLButtonElement;
+        const nextBtn = document.getElementById('nextDebugPage');
         if (nextBtn) nextBtn.disabled = debugPage >= totalPages;
 
-      } catch (err: any) {
+      } catch (err) {
         debugLogsBody.innerHTML = `<tr><td colspan="5" class="text-center text-secondary">Error: ${escapeHtml(err.message)}</td></tr>`;
       }
     }
 
     async function loadSyncLogs() {
-      const actionSelect = document.getElementById('syncActionFilter') as HTMLSelectElement;
+      const actionSelect = document.getElementById('syncActionFilter');
       const action = actionSelect ? actionSelect.value : '';
       try {
         syncLogsBody.innerHTML = `<tr><td colspan="4" class="text-center">Loading sync logs...</td></tr>`;
@@ -293,7 +293,7 @@ const nonce = Astro.locals.nonce;
         if (data.logs.length === 0) {
           syncLogsBody.innerHTML = `<tr><td colspan="4" class="text-center">No sync logs found</td></tr>`;
         } else {
-          syncLogsBody.innerHTML = data.logs.map((log: any) => `
+          syncLogsBody.innerHTML = data.logs.map((log) => `
             <tr>
               <td class="whitespace-nowrap">${escapeHtml(new Date(log.runAt).toLocaleString())}</td>
               <td><span class="badge-action">${escapeHtml(log.action)}</span></td>
@@ -309,16 +309,16 @@ const nonce = Astro.locals.nonce;
         }
 
         const totalPages = Math.ceil(data.total / limit) || 1;
-        const pageInfo = document.getElementById('syncPageInfo') as HTMLSpanElement;
+        const pageInfo = document.getElementById('syncPageInfo');
         if (pageInfo) pageInfo.textContent = `Page ${syncPage} of ${totalPages}`;
         
-        const prevBtn = document.getElementById('prevSyncPage') as HTMLButtonElement;
+        const prevBtn = document.getElementById('prevSyncPage');
         if (prevBtn) prevBtn.disabled = syncPage <= 1;
         
-        const nextBtn = document.getElementById('nextSyncPage') as HTMLButtonElement;
+        const nextBtn = document.getElementById('nextSyncPage');
         if (nextBtn) nextBtn.disabled = syncPage >= totalPages;
 
-      } catch (err: any) {
+      } catch (err) {
         syncLogsBody.innerHTML = `<tr><td colspan="4" class="text-center text-secondary">Error: ${escapeHtml(err.message)}</td></tr>`;
       }
     }

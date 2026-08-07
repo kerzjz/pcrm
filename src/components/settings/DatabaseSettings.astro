@@ -699,19 +699,19 @@ const getTableIcon = (tableName: string) => {
   }
 </style>
 
-<script nonce={nonce}>
-  const layout = document.querySelector('.settings-layout') as HTMLDivElement;
+<script is:inline nonce={nonce}>
+  const layout = document.querySelector('.settings-layout');
   const i18n = JSON.parse(layout?.getAttribute('data-i18n') || '{}');
   const lang = layout?.getAttribute('data-lang') || 'vi';
 
-  function showToast(message: string, type: 'success' | 'error' = 'success') {
+  function showToast(message, type = 'success') {
     const event = new CustomEvent('show-toast', { detail: { message, type } });
     window.dispatchEvent(event);
   }
 
   // Database optimize submit
-  const optimizeDbBtn = document.getElementById('optimizeDbBtn') as HTMLButtonElement;
-  const optSpinner = document.getElementById('optSpinner') as HTMLSpanElement;
+  const optimizeDbBtn = document.getElementById('optimizeDbBtn');
+  const optSpinner = document.getElementById('optSpinner');
 
   if (optimizeDbBtn) {
     optimizeDbBtn.addEventListener('click', async () => {
@@ -727,7 +727,7 @@ const getTableIcon = (tableName: string) => {
         } else {
           showToast(data.error || 'Optimization failed', 'error');
         }
-      } catch (err: any) {
+      } catch (err) {
         showToast('Network error: ' + err.message, 'error');
       } finally {
         optimizeDbBtn.disabled = false;
@@ -737,13 +737,13 @@ const getTableIcon = (tableName: string) => {
   }
 
   // Database Cleaning Logic
-  const dbClearModal = document.getElementById('dbClearModal') as HTMLDivElement;
-  const modalTitle = document.getElementById('modalTitle') as HTMLHeadingElement;
-  const modalDesc = document.getElementById('modalDesc') as HTMLSpanElement;
-  const confirmClearBtn = document.getElementById('confirmClearBtn') as HTMLButtonElement;
-  const cancelClearBtn = document.getElementById('cancelClearBtn') as HTMLButtonElement;
-  const closeModalBtn = document.getElementById('closeModalBtn') as HTMLButtonElement;
-  const clearSpinner = document.getElementById('clearSpinner') as HTMLSpanElement;
+  const dbClearModal = document.getElementById('dbClearModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalDesc = document.getElementById('modalDesc');
+  const confirmClearBtn = document.getElementById('confirmClearBtn');
+  const cancelClearBtn = document.getElementById('cancelClearBtn');
+  const closeModalBtn = document.getElementById('closeModalBtn');
+  const clearSpinner = document.getElementById('clearSpinner');
 
   let currentTargetTable = '';
 
@@ -817,7 +817,7 @@ const getTableIcon = (tableName: string) => {
           confirmClearBtn.disabled = false;
           if (clearSpinner) clearSpinner.style.display = 'none';
         }
-      } catch (err: any) {
+      } catch (err) {
         showToast('Network error: ' + err.message, 'error');
         confirmClearBtn.disabled = false;
         if (clearSpinner) clearSpinner.style.display = 'none';
